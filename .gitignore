@@ -1,0 +1,5 @@
+#Ignored filetypes
+*.exe
+#Ignored folders
+/resources
+/.vscode
