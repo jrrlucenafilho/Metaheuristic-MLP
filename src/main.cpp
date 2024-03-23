@@ -90,7 +90,6 @@ void UpdateAllSubSeqs(TspSolution* solution, vector<vector<Subsequence>>& subseq
         subseq_matrix[i][i].lastNode = solution->sequence[i];
     }
 
-
     //Now deal with the non-single-node subseqs
     for(int i = 0; i < solNodeQuant; i++){
         for(int j = i + 1; j < solNodeQuant; j++){
