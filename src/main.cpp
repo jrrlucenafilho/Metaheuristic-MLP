@@ -41,6 +41,7 @@ struct Subsequence {
         return sigma;
     }
 };
+
 typedef struct {
     clock_t accumulatedTime = 0;
     clock_t beginTime = 0;
@@ -70,6 +71,41 @@ void PrintNBSTimers()
     cout << "\t2-Opt time: " << two_opt_time_ptr->accumulatedTime / static_cast<double>(CLOCKS_PER_SEC) << " s\n";
     cout << "\tDisturbance time: " << disturbance_time_ptr->accumulatedTime / static_cast<double>(CLOCKS_PER_SEC) << " s\n";
 }
+/**
+ * @brief Inits all subseq values of a given param solution. Where ele seq_matrix[i][j] holds all subseq info in solution seq
+ * @var solNodeQuant Number of nodes in current instance
+ * @param solution
+ * @param subseq_matrix Matrix holding all subseq info in solution seq
+**/
+void UpdateAllSubSeqs(TspSolution* solution, vector<vector<Subsequence>>& subseq_matrix, double** m)
+{
+    int solNodeQuant = solution->sequence.size();
+
+    //First, deals with subseqs comprised of only 1 node
+    for(int i = 0; i < solNodeQuant; i++){
+        subseq_matrix[i][i].duration = (i > 0);
+        subseq_matrix[i][i].accumulatedCost = 0;
+        subseq_matrix[i][i].delayCost = 0;
+        subseq_matrix[i][i].firstNode = solution->sequence[i];
+        subseq_matrix[i][i].lastNode = solution->sequence[i];
+    }
+
+
+    //Now deal with the non-single-node subseqs
+    for(int i = 0; i < solNodeQuant; i++){
+        for(int j = i + 1; j < solNodeQuant; j++){
+            subseq_matrix[i][j] = Subsequence::ConcatenateSubsequences(subseq_matrix[i][j - 1], subseq_matrix[j][j], m);
+        }
+    }
+
+    //Now deals with inverted subseqs (for 2-opt)
+    for(int i = solNodeQuant - 1; i >= 0; i--){
+        for(int j = i - 1; j >= 0; j--){
+            subseq_matrix[i][j] = Subsequence::ConcatenateSubsequences(subseq_matrix[i][j + 1], subseq_matrix[j][j], m);
+        }
+    }
+}
+
 
 //BuildSolution Utility funcs
 /**
