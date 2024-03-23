@@ -9,7 +9,7 @@ using namespace std;
 typedef struct {
     vector<int> sequence;
     double cost;
-} TspSolution;
+} Solution;
 
 struct InsertionInfo {
     //Node that'll be inserted as graph gets built
@@ -41,7 +41,6 @@ struct Subsequence {
         return sigma;
     }
 };
-
 typedef struct {
     clock_t accumulatedTime = 0;
     clock_t beginTime = 0;
@@ -77,7 +76,7 @@ void PrintNBSTimers()
  * @param solution
  * @param subseq_matrix Matrix holding all subseq info in solution seq
 **/
-void UpdateAllSubSeqs(TspSolution* solution, vector<vector<Subsequence>>& subseq_matrix, double** m)
+void UpdateAllSubSeqs(Solution* solution, vector<vector<Subsequence>>& subseq_matrix, double** m)
 {
     int solNodeQuant = solution->sequence.size();
 
@@ -114,7 +113,7 @@ void UpdateAllSubSeqs(TspSolution* solution, vector<vector<Subsequence>>& subseq
  * @param distMatrix Matrix holding distances among graph nodes
  * @return insertionCost Cost of inserting nodes into TSP Solution graph
  **/
-vector<InsertionInfo> CalcNodeInsertionCost(TspSolution& tspSol, vector<int>& unaddedVertices, double** distMatrix)
+vector<InsertionInfo> CalcNodeInsertionCost(Solution& tspSol, vector<int>& unaddedVertices, double** distMatrix)
 {
     vector<InsertionInfo> insertionCost = vector<InsertionInfo>((tspSol.sequence.size() - 1) * unaddedVertices.size());
     int l = 0;
@@ -219,7 +218,7 @@ void SortAscendingByCost(vector<InsertionInfo>& insertionInfo)
 
 //Inserts a node into the tsp solution
 //And sums the current tspSol cost with the inserted node's own
-void InsertIntoSolution(TspSolution& tspSol, InsertionInfo& nodeInsertionInfo)
+void InsertIntoSolution(Solution& tspSol, InsertionInfo& nodeInsertionInfo)
 {
     tspSol.sequence.insert(tspSol.sequence.begin() + nodeInsertionInfo.removedGraphEdge + 1, nodeInsertionInfo.insertedNode);
 }
@@ -249,13 +248,13 @@ double CalculateSequenceCost(vector<int>& sequence, double** m)
 
 /**
  * @brief Builds a fair solution (though still far from optimized) Using Greedy Randomized Adaptive Search (Insertion-by-cheapest)
- * @return TspSolution
+ * @return Solution
  */
-TspSolution BuildSolution(double** distMatrix, int dimension)
+Solution BuildSolution(double** distMatrix, int dimension)
 {
     buildSol_time_ptr->beginTime = std::clock();
 
-    TspSolution tspSol;
+    Solution tspSol;
     vector<int> addedNodes;
     tspSol.sequence = Choose3RandNodes(dimension, addedNodes);   //gets s
     vector<int> unaddedNodes = GetUnchosenNodes(dimension, addedNodes);   //gets CL
@@ -287,7 +286,7 @@ TspSolution BuildSolution(double** distMatrix, int dimension)
 //Tries to get the best swap possible in the solution
 //As in the one that best minimizes the solution's cost
 //"m" here means distMatrix
-bool BestImprovementSwap(TspSolution& tspSol, double** m, int dimension)
+bool BestImprovementSwap(Solution& tspSol, double** m, int dimension)
 {
     bestImprovSwap_time_ptr->beginTime = std::clock();
 
@@ -336,7 +335,7 @@ bool BestImprovementSwap(TspSolution& tspSol, double** m, int dimension)
     return false;
 }
 
-bool BestImprovement2Opt(TspSolution& tspSol, double** m, int dimension)
+bool BestImprovement2Opt(Solution& tspSol, double** m, int dimension)
 {
     two_opt_time_ptr->beginTime = std::clock();
 
@@ -378,7 +377,7 @@ bool BestImprovement2Opt(TspSolution& tspSol, double** m, int dimension)
     return false;
 }
 
-bool BestImprovementOrOpt(TspSolution& tspSol, double** m, int dimension, int movedBlockSize)
+bool BestImprovementOrOpt(Solution& tspSol, double** m, int dimension, int movedBlockSize)
 {
     //Just to account for var creation time, prob quite smallish
     my_time_t var_creation_time;
@@ -551,7 +550,7 @@ bool BestImprovementOrOpt(TspSolution& tspSol, double** m, int dimension, int mo
 //Using the Random Variable Neighborhood Descent method
 //Which just tests different neighborhood structures with a tad of randomness when choosing
 //discarding whichever makes cost higher than currCost
-void LocalSearch(TspSolution& tspSol, double** distMatrix, int dimension)
+void LocalSearch(Solution& tspSol, double** distMatrix, int dimension)
 {
     vector<int> NH_structures = {1, 2, 3, 4, 5};
     bool solutionImproved = false;
@@ -592,14 +591,14 @@ int BoundedRand(int min, int max)
     return min + rand() % (max - min + 1);
 }
 
-//Return TspSolution, may have to call a cost-calc function inside here
-TspSolution Disturbance(TspSolution& tspSol, double** m, int dimension)
+//Return Solution, may have to call a cost-calc function inside here
+Solution Disturbance(Solution& tspSol, double** m, int dimension)
 {
     disturbance_time_ptr->beginTime = std::clock();
 
     vector<int> copiedSequence = tspSol.sequence;
     int segmentMaxLength = ceil(dimension / 10.0);
-    TspSolution disturbedSol;
+    Solution disturbedSol;
 
     //Will mark the index of first and last elements of each subsequence
     //Used to make it so they don't overlap
@@ -641,15 +640,15 @@ TspSolution Disturbance(TspSolution& tspSol, double** m, int dimension)
     return disturbedSol;
 }
 
-TspSolution IteratedLocalSearch(int maxIters, int maxIterILS, Data& data)
+Solution IteratedLocalSearch(int maxIters, int maxIterILS, Data& data)
 {
-    TspSolution bestOfAllSolution;
+    Solution bestOfAllSolution;
     bestOfAllSolution.cost = INFINITY;
 
     for(int i = 0; i < maxIters; i++){
         //Builds a beginning solution based on fair guesses
-        TspSolution currIterSolution = BuildSolution(data.getMatrixCost(), data.getDimension());
-        TspSolution currBestSolution = currIterSolution;
+        Solution currIterSolution = BuildSolution(data.getMatrixCost(), data.getDimension());
+        Solution currBestSolution = currIterSolution;
 
         int iterILS = 0;
 
@@ -683,7 +682,7 @@ int main(int argc, char** argv)
     int maxIterILS;
     double costsSum = 0;
     auto data = Data(argc, argv[1]);
-    TspSolution tspSol;
+    Solution tspSol;
     my_time_t ILS_iter_time;
 
     data.read();
