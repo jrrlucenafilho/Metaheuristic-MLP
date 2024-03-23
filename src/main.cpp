@@ -22,6 +22,25 @@ struct InsertionInfo {
     double cost;
 };
 
+//Aux structures. Holds relevant data for a given subsequence MLP
+struct Subsequence {
+    double duration, accumulatedCost;   //T, C
+    int delayCost; //W
+    int firstNode, lastNode; //pertaining to subsequence
+    inline static Subsequence ConcatenateSubsequences(Subsequence& sigma1, Subsequence& sigma2, double** m){
+        Subsequence sigma;
+        double temp = m[sigma1.lastNode][sigma2.firstNode];
+
+        sigma.delayCost = sigma1.delayCost + sigma2.delayCost;
+        sigma.duration = sigma1.duration + sigma2.duration;
+        sigma.accumulatedCost = sigma1.accumulatedCost + (sigma1.duration + temp)+ sigma2.accumulatedCost;
+    
+        sigma.firstNode = sigma1.firstNode;
+        sigma.lastNode = sigma2.lastNode;
+
+        return sigma;
+    }
+};
 typedef struct {
     clock_t accumulatedTime = 0;
     clock_t beginTime = 0;
