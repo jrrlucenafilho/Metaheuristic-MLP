@@ -106,12 +106,16 @@ void UpdateAllSubSeqs(Solution* solution, vector<vector<Subsequence>>& subseq_ma
     }
 }
 
+//TODO: Check if 'sequence.size()' should be changed to 'dimension'
 double CalculateSequenceCost(vector<int>& sequence, double** m)
 {
     double cost = 0;
+    double costSum = 0;
+    int formerNodeCost;
 
     for(int i = 0, j = 1; i < (int)sequence.size() - 1; i++, j++){
-        cost += m[sequence[i]][sequence[j]];
+        int formerNodeCost = m[sequence[i]][sequence[j]];
+        costSum += formerNodeCost;
     }
 
     return cost;
