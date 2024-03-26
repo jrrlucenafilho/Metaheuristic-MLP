@@ -8,7 +8,7 @@ using namespace std;
 
 typedef struct {
     vector<int> sequence;
-    double cost;
+    double cost = 0.0;
 } Solution;
 
 struct InsertionInfo {
@@ -27,7 +27,7 @@ struct Subsequence {
     double duration, accumulatedCost;   //T, C
     int delayCost; //W
     int firstNode, lastNode; //pertaining to subsequence
-    inline static Subsequence ConcatenateSubsequences(Subsequence& sigma1, Subsequence& sigma2, double** m){
+    inline static Subsequence Concatenate(Subsequence& sigma1, Subsequence& sigma2, double** m){
         Subsequence sigma;
         double temp = m[sigma1.lastNode][sigma2.firstNode];
 
@@ -41,6 +41,7 @@ struct Subsequence {
         return sigma;
     }
 };
+
 typedef struct {
     clock_t accumulatedTime = 0;
     clock_t beginTime = 0;
@@ -70,6 +71,7 @@ void PrintNBSTimers()
     cout << "\t2-Opt time: " << two_opt_time_ptr->accumulatedTime / static_cast<double>(CLOCKS_PER_SEC) << " s\n";
     cout << "\tDisturbance time: " << disturbance_time_ptr->accumulatedTime / static_cast<double>(CLOCKS_PER_SEC) << " s\n";
 }
+
 /**
  * @brief Inits all subseq values of a given param solution. Where ele seq_matrix[i][j] holds all subseq info in solution seq
  * @var solNodeQuant Number of nodes in current instance
@@ -92,145 +94,14 @@ void UpdateAllSubSeqs(Solution* solution, vector<vector<Subsequence>>& subseq_ma
     //Now deal with the non-single-node subseqs
     for(int i = 0; i < solNodeQuant; i++){
         for(int j = i + 1; j < solNodeQuant; j++){
-            subseq_matrix[i][j] = Subsequence::ConcatenateSubsequences(subseq_matrix[i][j - 1], subseq_matrix[j][j], m);
+            subseq_matrix[i][j] = Subsequence::Concatenate(subseq_matrix[i][j - 1], subseq_matrix[j][j], m);
         }
     }
 
     //Now deals with inverted subseqs (for 2-opt)
     for(int i = solNodeQuant - 1; i >= 0; i--){
         for(int j = i - 1; j >= 0; j--){
-            subseq_matrix[i][j] = Subsequence::ConcatenateSubsequences(subseq_matrix[i][j + 1], subseq_matrix[j][j], m);
-        }
-    }
-}
-
-
-//BuildSolution Utility funcs
-/**
- * @brief Calcs the cost of inserting the new node into the graph. (vertex and node used interchangaebly here)
- * @param tspSol To-be-evaluated TSP Solution
- * @param unaddedVertices Vertices / Nodes that still don't belong to the solution subtour
- * @param distMatrix Matrix holding distances among graph nodes
- * @return insertionCost Cost of inserting nodes into TSP Solution graph
- **/
-vector<InsertionInfo> CalcNodeInsertionCost(Solution& tspSol, vector<int>& unaddedVertices, double** distMatrix)
-{
-    vector<InsertionInfo> insertionCost = vector<InsertionInfo>((tspSol.sequence.size() - 1) * unaddedVertices.size());
-    int l = 0;
-    int i, j;
-
-    //Iterating among all nodes in the solution sequence, going edge-by-edge through curr solution (pair of 2 nodes on each edge)
-    for(int node1 = 0; node1 < (int)tspSol.sequence.size() - 1; node1++){
-        i = tspSol.sequence[node1];
-        j = tspSol.sequence[node1 + 1];
-
-        //For each node/vertex
-        for(int k : unaddedVertices){
-            insertionCost[l].cost = distMatrix[i][k] + distMatrix[j][k] - distMatrix[i][j];
-            insertionCost[l].insertedNode = k;
-            insertionCost[l].removedGraphEdge = node1;
-            l++;
-        }
-    }
-
-    return insertionCost;
-}
-
-//Chooses 3 random nodes in the graph from 1 up to dimension (numOfNodes)
-//Makes a sequence from them following {1, x, y, z, 1} and puts the 3 added nodes into solAddedNodes
-//solAddedNodes must be empty
-vector<int> Choose3RandNodes(int dimension, vector<int>& solAddedNodes)
-{
-    vector<int> starterSeq;
-    int randNode = 0;
-    bool nodeAlreadyAddedFlag = false;
-
-    starterSeq.reserve(5);  //{1, x, y, z, 1}
-    starterSeq.push_back(1);
-
-    //Choosing ramdonly 'till 3 non-equal nodes are added
-    //Doing this cause i can't add the same node twice (leads to INFINITE distance)
-    while((int)starterSeq.size() != 4){
-        //Randomly chooses a node from 0 up to numOfNodes
-        randNode = rand() % (dimension + 1);
-
-        //Handles if rand chooses 0 or 1, since distances 1-indexed here and 1 is the first and last city
-        if((randNode == 0) || (randNode == 1)){
-            randNode = 2;
-        }
-
-        //Checks if this node has already been added to starterSeq
-        for(int i = 0; i < (int)solAddedNodes.size(); i++){
-            if(randNode == solAddedNodes[i]){
-                nodeAlreadyAddedFlag = true;
-                break;
-            }
-        }
-
-        //Only adds it if this node isn't a repeat
-        if(!nodeAlreadyAddedFlag){
-            starterSeq.push_back(randNode);
-            solAddedNodes.push_back(randNode);
-        }
-        nodeAlreadyAddedFlag = false; //For next iter
-    }
-    starterSeq.push_back(1);
-
-    return starterSeq;
-}
-
-//Receives a vector with the ramdomly-added-to-solution nodes, and removes them from the vector containing all nodes in the graph
-//Effectively returns CL
-vector<int> GetUnchosenNodes(int dimension, vector<int>& solAddedNodes)
-{
-    vector<int> unaddedNodes;
-    bool nodeFound = false;
-
-    //Iterates through s from 2 to numOfNodes (distMatrix is 1-indexed and 1 will always be in the solution)
-    for(int i = 2; i <= dimension; i++){
-        //Checks if current array element is any of the 3 in solAddedNodes
-        for(int j = 0; j < (int)solAddedNodes.size(); j++){
-            //Checks if this node was added to solSequence, immediately breaking out of the 3-check loop if it's found
-            if(i == solAddedNodes[j]){
-                nodeFound = true;
-                break;
-            }
-            nodeFound = false;
-        }
-
-        if(!nodeFound){
-            unaddedNodes.push_back(i);
-        }
-    }
-    return unaddedNodes;
-}
-
-//Cost sorting funcs
-bool CompareByCost(InsertionInfo prevInsertionInfo, InsertionInfo currInsertionInfo)
-{
-    return prevInsertionInfo.cost < currInsertionInfo.cost;
-}
-
-void SortAscendingByCost(vector<InsertionInfo>& insertionInfo)
-{
-    sort(insertionInfo.begin(), insertionInfo.end(), CompareByCost);
-}
-
-//Inserts a node into the tsp solution
-//And sums the current tspSol cost with the inserted node's own
-void InsertIntoSolution(Solution& tspSol, InsertionInfo& nodeInsertionInfo)
-{
-    tspSol.sequence.insert(tspSol.sequence.begin() + nodeInsertionInfo.removedGraphEdge + 1, nodeInsertionInfo.insertedNode);
-}
-
-//Removes selected node
-//Assumes it's not repeated (which both 's' and 'CL' shouldn't be anyways)
-void RemoveFromUnaddedNodes(vector<int>& unaddedNodes, int node)
-{
-    for(int i = 0; i < (int)unaddedNodes.size(); i++){
-        if(unaddedNodes[i] == node){
-            unaddedNodes.erase(unaddedNodes.begin() + i);
-            break;
+            subseq_matrix[i][j] = Subsequence::Concatenate(subseq_matrix[i][j + 1], subseq_matrix[j][j], m);
         }
     }
 }
@@ -254,32 +125,37 @@ Solution BuildSolution(double** distMatrix, int dimension)
 {
     buildSol_time_ptr->beginTime = std::clock();
 
-    Solution tspSol;
-    vector<int> addedNodes;
-    tspSol.sequence = Choose3RandNodes(dimension, addedNodes);   //gets s
-    vector<int> unaddedNodes = GetUnchosenNodes(dimension, addedNodes);   //gets CL
+    Solution solution;
+    vector<pair<double, int>> candidatesList;
 
-    //Calculating cost for the initial solution
-    tspSol.cost = CalculateSequenceCost(tspSol.sequence, distMatrix);
+    //First begin building seq (already inits at cost being zero)
+    solution.sequence = {1};
 
-    while(!unaddedNodes.empty()){
-        vector<InsertionInfo> insertionCost = CalcNodeInsertionCost(tspSol, unaddedNodes, distMatrix);  //TEST: Put this outta the loop (and at the end) (prob the same thing)
-
-        SortAscendingByCost(insertionCost);
-
-        double alpha = ((double)rand() + 1) / RAND_MAX; //rand() + 1 so that alpha can't be zero, which throws an Arithmetic exception on next line
-        int selected = rand() % ((int)ceil(alpha * insertionCost.size()));
-        InsertIntoSolution(tspSol, insertionCost[selected]);
-
-        RemoveFromUnaddedNodes(unaddedNodes, insertionCost[selected].insertedNode);
+    //Populating CL
+    for(int i = 2; i <= dimension; i++){
+        candidatesList.push_back({distMatrix[0][i], i});
     }
 
-    tspSol.cost = CalculateSequenceCost(tspSol.sequence, distMatrix);
+    while(!candidatesList.empty()){
+        //Sorts the list of candidates by cost
+        sort(candidatesList.begin(), candidatesList.end());
+
+        //Somewhat random
+        double alpha = ((double)rand() + 1) / RAND_MAX;
+        int selected = rand() % ((int)ceil(alpha * candidatesList.size()));
+
+        //Add it to initial sol seq and remove from CL
+        solution.sequence.push_back(candidatesList[selected].second);
+        candidatesList.erase(candidatesList.begin() + selected);
+    }
+
+    solution.sequence.push_back(1);
+    solution.cost = CalculateSequenceCost(solution.sequence, distMatrix);
 
     buildSol_time_ptr->endTime = std::clock();
     buildSol_time_ptr->accumulatedTime += buildSol_time_ptr->endTime - buildSol_time_ptr->beginTime;
 
-    return tspSol;
+    return solution;
 }
 
 /*BestImprovement funcs with differing methods to be used for RVND in LocalSearch()*/
