@@ -27,6 +27,7 @@ struct Subsequence {
     double duration, accumulatedCost;   //T, C
     int delayCost; //W
     int firstNode, lastNode; //pertaining to subsequence
+
     inline static Subsequence Concatenate(Subsequence& sigma1, Subsequence& sigma2, double** m){
         Subsequence sigma;
         double temp = m[sigma1.lastNode][sigma2.firstNode];
@@ -106,7 +107,7 @@ void UpdateAllSubSeqs(Solution* solution, vector<vector<Subsequence>>& subseq_ma
     }
 }
 
-//TODO: Check if 'sequence.size()' should be changed to 'dimension'
+//TODO: test if 'sequence.size()' should be changed to 'dimension'
 double CalculateSequenceCost(vector<int>& sequence, double** m)
 {
     double cost = 0;
@@ -165,34 +166,32 @@ Solution BuildSolution(double** distMatrix, int dimension)
 /*BestImprovement funcs with differing methods to be used for RVND in LocalSearch()*/
 //Tries to get the best swap possible in the solution
 //As in the one that best minimizes the solution's cost
-//"m" here means distMatrix
-bool BestImprovementSwap(Solution& tspSol, double** m, int dimension)
+//"m" here means distMatrix //TODO: cost as an arg rather than solution.cost?
+bool BestImprovementSwap(Solution& solution, vector<vector<Subsequence>>& subseqMatrix, double** m, int dimension)
 {
     bestImprovSwap_time_ptr->beginTime = std::clock();
 
-    //"Delta" as in the overall solution's cost
-    double bestDelta = 0;
-    double currDelta;
-    double toBeRemovedSection;
-    int best_i = 0, best_j = 0;
+    //Inits
+    Subsequence sigma1, sigma2, sigma3, sigma4, sigmaLast;
+    double bestCost = subseqMatrix[0][dimension].accumulatedCost;
     int graphSize = dimension + 1;
+    int best_i = 0, best_j = 0;
 
     for(int i = 1; i < graphSize - 1; i++){
         for(int j = i + 1; j < graphSize - 1; j++){
-            toBeRemovedSection = -(m[tspSol.sequence[i]][tspSol.sequence[i + 1]] + m[tspSol.sequence[i]][tspSol.sequence[i - 1]] 
-                                 + m[tspSol.sequence[j]][tspSol.sequence[j + 1]] + m[tspSol.sequence[j]][tspSol.sequence[j - 1]]);
-        
-            //In case of neighboring nodes
             if(j == i + 1){
-                currDelta = - m[tspSol.sequence[i - 1]][tspSol.sequence[i]] - m[tspSol.sequence[j]][tspSol.sequence[j + 1]] 
-                            + m[tspSol.sequence[i - 1]][tspSol.sequence[j]] + m[tspSol.sequence[i]][tspSol.sequence[j + 1]];
+                sigma1 = Subsequence::Concatenate(subseqMatrix[0][i - 1], subseqMatrix[j][j], m);
+                sigma2 = Subsequence::Concatenate(sigma1, subseqMatrix[i][i], m);
+                sigmaLast = Subsequence::Concatenate(sigma2, subseqMatrix[j + 1][dimension], m);
             }else{
-                currDelta = toBeRemovedSection + m[tspSol.sequence[i]][tspSol.sequence[j + 1]] + m[tspSol.sequence[i]][tspSol.sequence[j - 1]] 
-                            + m[tspSol.sequence[j]][tspSol.sequence[i + 1]] + m[tspSol.sequence[j]][tspSol.sequence[i - 1]];
+                sigma1 = Subsequence::Concatenate(subseqMatrix[0][i - 1], subseqMatrix[j][j], m);
+                sigma2 = Subsequence::Concatenate(sigma1, subseqMatrix[i + 1][j - 1], m);
+                sigma3 = Subsequence::Concatenate(sigma2, subseqMatrix[i][i], m);
+                sigmaLast = Subsequence::Concatenate(sigma3, subseqMatrix[j + 1][dimension], m);
             }
 
-            if(currDelta < bestDelta){
-                bestDelta = currDelta;
+            if(sigmaLast.accumulatedCost < bestCost){
+                bestCost = sigmaLast.accumulatedCost;
                 best_i = i;
                 best_j = j;
             }
@@ -200,13 +199,30 @@ bool BestImprovementSwap(Solution& tspSol, double** m, int dimension)
     }
 
     //Actual swap, only happens when overall solution cost lowers
-    if(bestDelta < 0){
-        swap(tspSol.sequence[best_i], tspSol.sequence[best_j]);
-        tspSol.cost = tspSol.cost + bestDelta;
-        return true;
+    if(bestCost < solution.cost){
+        solution.cost = bestCost;   //TODO: Test order just to be sure
+        swap(solution.sequence[best_i], solution.sequence[best_j]);
+        swap(subseqMatrix[best_i][best_i], subseqMatrix[best_j][best_j]);
+
+        //Concats
+        for(int i = 0; i < best_i; i++){
+            for(int j = best_i; j < graphSize; j++){
+                subseqMatrix[i][j] = Subsequence::Concatenate(subseqMatrix[i][j - 1], subseqMatrix[j][j], m);
+                subseqMatrix[j][i] = Subsequence::Concatenate(subseqMatrix[j][j], subseqMatrix[j - 1][i], m);
+            }
+        }
+
+        for(int i = best_i; i <= best_j; i++){  
+            for(int j = i + 1; j < graphSize; j++){ 
+                subseqMatrix[i][j] = Subsequence::Concatenate(subseqMatrix[i][j - 1], subseqMatrix[j][j], m);
+                subseqMatrix[j][i] = Subsequence::Concatenate(subseqMatrix[j][j], subseqMatrix[j - 1][i], m);
+            }
+        }
 
         bestImprovSwap_time_ptr->endTime = std::clock();
         bestImprovSwap_time_ptr->accumulatedTime += bestImprovSwap_time_ptr->endTime - bestImprovSwap_time_ptr->beginTime;
+        
+        return true;
     }
 
     bestImprovSwap_time_ptr->endTime = std::clock();
@@ -215,25 +231,22 @@ bool BestImprovementSwap(Solution& tspSol, double** m, int dimension)
     return false;
 }
 
-bool BestImprovement2Opt(Solution& tspSol, double** m, int dimension)
+bool BestImprovement2Opt(Solution& solution, vector<vector<Subsequence>>& subseqMatrix, double** m, int dimension)
 {
     two_opt_time_ptr->beginTime = std::clock();
 
-    double bestDelta = 0;
-    double initialDelta, currDelta;
-    int best_i = 0, best_j = 0;
+    Subsequence sigma1, sigma2;
+    double bestCost = subseqMatrix[0][dimension].accumulatedCost;
     int graphSize = dimension + 1;
+    int best_i = 0, best_j = 0;
 
     for(int i = 1; i < graphSize - 1; i++){
-        initialDelta = -m[tspSol.sequence[i - 1]][tspSol.sequence[i]];
-
         for(int j = i + 1; j < graphSize - 1; j++){
-            currDelta = initialDelta -m[tspSol.sequence[j]][tspSol.sequence[j + 1]] 
-                                     + m[tspSol.sequence[i - 1]][tspSol.sequence[j]] 
-                                     + m[tspSol.sequence[i]][tspSol.sequence[j + 1]];
+            sigma1 = Subsequence::Concatenate(subseqMatrix[0][i - 1], subseqMatrix[j][i], m);
+            sigma2 = Subsequence::Concatenate(sigma1, subseqMatrix[j + 1][dimension], m);
 
-            if(currDelta < bestDelta){
-                bestDelta = currDelta;
+            if(sigma2.accumulatedCost < bestCost){
+                bestCost = sigma2.accumulatedCost;
                 best_i = i;
                 best_j = j;
             }
@@ -241,9 +254,24 @@ bool BestImprovement2Opt(Solution& tspSol, double** m, int dimension)
     }
 
     //Actual swap
-    if(bestDelta < 0){
-        reverse(tspSol.sequence.begin() + best_i, tspSol.sequence.begin() + best_j + 1);
-        tspSol.cost = tspSol.cost + bestDelta;
+    if(bestCost < solution.cost){
+        reverse(solution.sequence.begin() + best_i, solution.sequence.begin() + best_j + 1);
+        solution.cost = bestCost;
+
+        //Concats
+        for(int i = best_i; i <= best_j; i++){
+            for(int j = i + 1; j < graphSize; j++){
+                subseqMatrix[i][j] = Subsequence::Concatenate(subseqMatrix[i][j - 1], subseqMatrix[j][j], m);
+                subseqMatrix[j][i] = Subsequence::Concatenate(subseqMatrix[j][j], subseqMatrix[j - 1][i], m);
+            }
+        }
+
+        for(int i = best_i; i <= best_j; i++){
+            for(int j = i + 1; j < graphSize; j++){
+                subseqMatrix[i][j] = Subsequence::Concatenate(subseqMatrix[i][j - 1], subseqMatrix[j][j], m);
+                subseqMatrix[j][i] = Subsequence::Concatenate(subseqMatrix[j][j], subseqMatrix[j - 1][i], m);
+            }
+        }
 
         two_opt_time_ptr->endTime = std::clock();
         two_opt_time_ptr->accumulatedTime += two_opt_time_ptr->endTime - two_opt_time_ptr->beginTime;
