@@ -334,24 +334,20 @@ bool BestImprovementOrOpt(Solution& solution, vector<vector<Subsequence>>& subse
         orOpt2_time_ptr->beginTime = std::clock();
 
         for(int i = 1; i < graphSize - 2; i++){
-            initialDelta = -m[solution.sequence[i - 1]][solution.sequence[i]]
-                           - m[solution.sequence[i + 1]][solution.sequence[i + 2]] 
-                           + m[solution.sequence[i - 1]][solution.sequence[i + 2]];
-
             for(int j = 1; j < graphSize - 3; j++){
                 if(i != j){
                     if(i < j){
-                        currDelta = initialDelta -m[solution.sequence[j + 1]][solution.sequence[j + 2]] 
-                                                 + m[solution.sequence[i + 1]][solution.sequence[j + 2]] 
-                                                 + m[solution.sequence[i]][solution.sequence[j + 1]];
+                        sigma1 = Subsequence::Concatenate(subseqMatrix[0][i - 1], subseqMatrix[i + 2][j + 1], m);
+                        sigma2 = Subsequence::Concatenate(sigma1, subseqMatrix[i][i + 1], m);
+                        sigma3 = Subsequence::Concatenate(sigma2, subseqMatrix[j + 2][dimension], m);
                     }else{
-                        currDelta = initialDelta -m[solution.sequence[j - 1]][solution.sequence[j]] 
-                                                 + m[solution.sequence[j - 1]][solution.sequence[i]] 
-                                                 + m[solution.sequence[i + 1]][solution.sequence[j]];
+                        sigma1 = Subsequence::Concatenate(subseqMatrix[0][j - 1], subseqMatrix[i][i + 1], m);
+                        sigma2 = Subsequence::Concatenate(sigma1, subseqMatrix[j][i - 1], m);
+                        sigma3 = Subsequence::Concatenate(sigma2, subseqMatrix[i + 2][dimension], m);
                     }
 
-                    if(currDelta < bestDelta){
-                        bestDelta = currDelta;
+                    if(sigma3.accumulatedCost < bestCost){
+                        bestCost = sigma3.accumulatedCost;
                         best_i = i;
                         best_j = j;
                     }
@@ -402,11 +398,11 @@ bool BestImprovementOrOpt(Solution& solution, vector<vector<Subsequence>>& subse
         if(movedBlockSize == 1){
             orOpt_time_ptr->beginTime = std::clock();
 
-            int reinsertedPortion = solution.sequence[best_i];
+            int reinsertPortion = solution.sequence[best_i];
             solution.sequence.erase(solution.sequence.begin() + best_i);
-            solution.sequence.insert(solution.sequence.begin() + best_j, reinsertedPortion);
+            solution.sequence.insert(solution.sequence.begin() + best_j, reinsertPortion);
 
-            solution.cost += bestCost;
+            solution.cost = bestCost;
 
             //Swap and concats
             if(best_i > best_j){
@@ -445,11 +441,23 @@ bool BestImprovementOrOpt(Solution& solution, vector<vector<Subsequence>>& subse
         if(movedBlockSize == 2){
             orOpt2_time_ptr->beginTime = std::clock();
 
-            vector<int> reinsertSequence(solution.sequence.begin() + best_i, solution.sequence.begin() + best_i + 2);
+            vector<int> reinsertPortion(solution.sequence.begin() + best_i, solution.sequence.begin() + best_i + 2);
             solution.sequence.erase(solution.sequence.begin() + best_i, solution.sequence.begin() + best_i + 2);
-            solution.sequence.insert(solution.sequence.begin() + best_j, reinsertSequence.begin(), reinsertSequence.end());
+            solution.sequence.insert(solution.sequence.begin() + best_j, reinsertPortion.begin(), reinsertPortion.end());
 
-            solution.cost += bestDelta;
+            bestCost = solution.cost;
+
+            if(best_i > best_j){
+                swap(best_i, best_j);
+            }
+
+            for(int i = best_i; i <= best_j + 1; i++){
+                subseqMatrix[i][i].delayCost = (i > 0);
+                subseqMatrix[i][i].accumulatedCost = 0;
+                subseqMatrix[i][i].duration = 0;
+                subseqMatrix[i][i].firstNode = solution.sequence[i];
+                subseqMatrix[i][i].lastNode = solution.sequence[i];
+            }
 
             orOpt2_time_ptr->endTime = std::clock();
             orOpt2_time_ptr->accumulatedTime += orOpt2_time_ptr->endTime - orOpt2_time_ptr->beginTime;
