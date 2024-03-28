@@ -77,32 +77,32 @@ void PrintNBSTimers()
  * @brief Inits all subseq values of a given param solution. Where ele seq_matrix[i][j] holds all subseq info in solution seq
  * @var solNodeQuant Number of nodes in current instance
  * @param solution
- * @param subseq_matrix Matrix holding all subseq info in solution seq
+ * @param subseqMatrix Matrix holding all subseq info in solution seq
 **/
-void UpdateAllSubSeqs(Solution* solution, vector<vector<Subsequence>>& subseq_matrix, double** m)
+void UpdateAllSubSeqs(Solution* solution, vector<vector<Subsequence>>& subseqMatrix, double** m)
 {
     int solNodeQuant = solution->sequence.size();
 
     //First, deals with subseqs comprised of only 1 node
     for(int i = 0; i < solNodeQuant; i++){
-        subseq_matrix[i][i].duration = (i > 0);
-        subseq_matrix[i][i].accumulatedCost = 0;
-        subseq_matrix[i][i].delayCost = 0;
-        subseq_matrix[i][i].firstNode = solution->sequence[i];
-        subseq_matrix[i][i].lastNode = solution->sequence[i];
+        subseqMatrix[i][i].duration = (i > 0);
+        subseqMatrix[i][i].accumulatedCost = 0;
+        subseqMatrix[i][i].delayCost = 0;
+        subseqMatrix[i][i].firstNode = solution->sequence[i];
+        subseqMatrix[i][i].lastNode = solution->sequence[i];
     }
 
     //Now deal with the non-single-node subseqs
     for(int i = 0; i < solNodeQuant; i++){
         for(int j = i + 1; j < solNodeQuant; j++){
-            subseq_matrix[i][j] = Subsequence::Concatenate(subseq_matrix[i][j - 1], subseq_matrix[j][j], m);
+            subseqMatrix[i][j] = Subsequence::Concatenate(subseqMatrix[i][j - 1], subseqMatrix[j][j], m);
         }
     }
 
     //Now deals with inverted subseqs (for 2-opt)
     for(int i = solNodeQuant - 1; i >= 0; i--){
         for(int j = i - 1; j >= 0; j--){
-            subseq_matrix[i][j] = Subsequence::Concatenate(subseq_matrix[i][j + 1], subseq_matrix[j][j], m);
+            subseqMatrix[i][j] = Subsequence::Concatenate(subseqMatrix[i][j + 1], subseqMatrix[j][j], m);
         }
     }
 }
@@ -527,7 +527,7 @@ bool BestImprovementOrOpt(Solution& solution, vector<vector<Subsequence>>& subse
 //Using the Random Variable Neighborhood Descent method
 //Which just tests different neighborhood structures with a tad of randomness when choosing
 //discarding whichever makes cost higher than currCost
-void LocalSearch(Solution& tspSol, double** distMatrix, int dimension)
+void LocalSearch(Solution& solution, vector<vector<Subsequence>>& subseqMatrix, double** distMatrix, int dimension)
 {
     vector<int> NH_structures = {1, 2, 3, 4, 5};
     bool solutionImproved = false;
@@ -538,19 +538,19 @@ void LocalSearch(Solution& tspSol, double** distMatrix, int dimension)
         //Chooses randomly
         switch(NH_structures[rand_n]){
             case 1:
-                solutionImproved = BestImprovementSwap(tspSol, distMatrix, dimension);
+                solutionImproved = BestImprovementSwap(solution, subseqMatrix, distMatrix, dimension);
                 break;
             case 2:
-                solutionImproved = BestImprovement2Opt(tspSol, distMatrix, dimension);
+                solutionImproved = BestImprovement2Opt(solution, subseqMatrix, distMatrix, dimension);
                 break;
             case 3:
-                solutionImproved = BestImprovementOrOpt(tspSol, distMatrix, dimension, 1);
+                solutionImproved = BestImprovementOrOpt(solution, subseqMatrix, distMatrix, dimension, 1);
                 break;
             case 4:
-                solutionImproved = BestImprovementOrOpt(tspSol, distMatrix, dimension, 2);
+                solutionImproved = BestImprovementOrOpt(solution, subseqMatrix, distMatrix, dimension, 2);
                 break;
             case 5:
-                solutionImproved = BestImprovementOrOpt(tspSol, distMatrix, dimension, 3);
+                solutionImproved = BestImprovementOrOpt(solution, subseqMatrix, distMatrix, dimension, 3);
                 break;
         }
 
