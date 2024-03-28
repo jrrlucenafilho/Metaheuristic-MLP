@@ -285,16 +285,16 @@ bool BestImprovement2Opt(Solution& solution, vector<vector<Subsequence>>& subseq
     return false;
 }
 
-bool BestImprovementOrOpt(Solution& tspSol, double** m, int dimension, int movedBlockSize)
+bool BestImprovementOrOpt(Solution& solution, vector<vector<Subsequence>>& subseqMatrix, double** m, int dimension, int movedBlockSize)
 {
-    //Just to account for var creation time, prob quite smallish
+    //Just to account for var creation time, smallish
     my_time_t var_creation_time;
     var_creation_time.beginTime = std::clock();
 
-    double bestDelta = 0;
-    double initialDelta, currDelta = 0;
-    int best_i = 0, best_j = 0;
+    Subsequence sigma1, sigma2, sigma3;
+    double bestCost = subseqMatrix[0][dimension].accumulatedCost;
     int graphSize = dimension + 1;
+    int best_i = 0, best_j = 0;
 
     var_creation_time.endTime = std::clock();
     var_creation_time.accumulatedTime += var_creation_time.endTime - var_creation_time.beginTime;
@@ -303,25 +303,21 @@ bool BestImprovementOrOpt(Solution& tspSol, double** m, int dimension, int moved
     if(movedBlockSize == 1){
         orOpt_time_ptr->beginTime = std::clock();
 
-        for(int i = 1; i < graphSize - 1; i++){
-            initialDelta = -m[tspSol.sequence[i - 1]][tspSol.sequence[i]] 
-                           - m[tspSol.sequence[i]][tspSol.sequence[i + 1]] 
-                           + m[tspSol.sequence[i - 1]][tspSol.sequence[i + 1]];
-        
+        for(int i = 1; i < graphSize - 1; i++){        
             for(int j = 1; j < graphSize - 1; j++){
                 if(i != j){
                     if(i < j){
-                        currDelta = initialDelta -m[tspSol.sequence[j]][tspSol.sequence[j + 1]]
-                                                 + m[tspSol.sequence[i]][tspSol.sequence[j]] 
-                                                 + m[tspSol.sequence[i]][tspSol.sequence[j + 1]];
+                        sigma1 = Subsequence::Concatenate(subseqMatrix[0][i - 1], subseqMatrix[i + 1][j], m);
+                        sigma2 = Subsequence::Concatenate(sigma1, subseqMatrix[i][i], m);
+                        sigma3 = Subsequence::Concatenate(sigma2, subseqMatrix[j + 1][dimension], m);
                     }else{
-                        currDelta = initialDelta -m[tspSol.sequence[j]][tspSol.sequence[j - 1]] 
-                                                 + m[tspSol.sequence[i]][tspSol.sequence[j]] 
-                                                 + m[tspSol.sequence[j - 1]][tspSol.sequence[i]];
+                        sigma1 = Subsequence::Concatenate(subseqMatrix[0][j - 1], subseqMatrix[i][i], m);
+                        sigma2 = Subsequence::Concatenate(sigma1, subseqMatrix[j][i - 1], m);
+                        sigma3 = Subsequence::Concatenate(sigma2, subseqMatrix[i + 1][dimension], m);
                     }
 
-                    if(currDelta < bestDelta){
-                        bestDelta = currDelta;
+                    if(sigma3.accumulatedCost < bestCost){
+                        bestCost = sigma3.accumulatedCost;
                         best_i = i;
                         best_j = j;
                     }
@@ -338,20 +334,20 @@ bool BestImprovementOrOpt(Solution& tspSol, double** m, int dimension, int moved
         orOpt2_time_ptr->beginTime = std::clock();
 
         for(int i = 1; i < graphSize - 2; i++){
-            initialDelta = -m[tspSol.sequence[i - 1]][tspSol.sequence[i]]
-                           - m[tspSol.sequence[i + 1]][tspSol.sequence[i + 2]] 
-                           + m[tspSol.sequence[i - 1]][tspSol.sequence[i + 2]];
+            initialDelta = -m[solution.sequence[i - 1]][solution.sequence[i]]
+                           - m[solution.sequence[i + 1]][solution.sequence[i + 2]] 
+                           + m[solution.sequence[i - 1]][solution.sequence[i + 2]];
 
             for(int j = 1; j < graphSize - 3; j++){
                 if(i != j){
                     if(i < j){
-                        currDelta = initialDelta -m[tspSol.sequence[j + 1]][tspSol.sequence[j + 2]] 
-                                                 + m[tspSol.sequence[i + 1]][tspSol.sequence[j + 2]] 
-                                                 + m[tspSol.sequence[i]][tspSol.sequence[j + 1]];
+                        currDelta = initialDelta -m[solution.sequence[j + 1]][solution.sequence[j + 2]] 
+                                                 + m[solution.sequence[i + 1]][solution.sequence[j + 2]] 
+                                                 + m[solution.sequence[i]][solution.sequence[j + 1]];
                     }else{
-                        currDelta = initialDelta -m[tspSol.sequence[j - 1]][tspSol.sequence[j]] 
-                                                 + m[tspSol.sequence[j - 1]][tspSol.sequence[i]] 
-                                                 + m[tspSol.sequence[i + 1]][tspSol.sequence[j]];
+                        currDelta = initialDelta -m[solution.sequence[j - 1]][solution.sequence[j]] 
+                                                 + m[solution.sequence[j - 1]][solution.sequence[i]] 
+                                                 + m[solution.sequence[i + 1]][solution.sequence[j]];
                     }
 
                     if(currDelta < bestDelta){
@@ -372,20 +368,20 @@ bool BestImprovementOrOpt(Solution& tspSol, double** m, int dimension, int moved
         orOpt3_time_ptr->beginTime = std::clock();
 
         for(int i = 1; i < graphSize - 3; i++){
-            initialDelta = -m[tspSol.sequence[i - 1]][tspSol.sequence[i]]
-                           - m[tspSol.sequence[i + 2]][tspSol.sequence[i + 3]] 
-                           + m[tspSol.sequence[i - 1]][tspSol.sequence[i + 3]];
+            initialDelta = -m[solution.sequence[i - 1]][solution.sequence[i]]
+                           - m[solution.sequence[i + 2]][solution.sequence[i + 3]] 
+                           + m[solution.sequence[i - 1]][solution.sequence[i + 3]];
     
             for(int j = 1; j < graphSize - 4; j++){
                 if(i != j){
                     if(i < j){
-                        currDelta = initialDelta -m[tspSol.sequence[j + 2]][tspSol.sequence[j + 3]] 
-                                                 + m[tspSol.sequence[i]][tspSol.sequence[j + 2]]
-                                                 + m[tspSol.sequence[i + 2]][tspSol.sequence[j + 3]];
+                        currDelta = initialDelta -m[solution.sequence[j + 2]][solution.sequence[j + 3]] 
+                                                 + m[solution.sequence[i]][solution.sequence[j + 2]]
+                                                 + m[solution.sequence[i + 2]][solution.sequence[j + 3]];
                     }else{
-                        currDelta = initialDelta -m[tspSol.sequence[j - 1]][tspSol.sequence[j]] 
-                                                 + m[tspSol.sequence[j - 1]][tspSol.sequence[i]] 
-                                                 + m[tspSol.sequence[i + 2]][tspSol.sequence[j]];
+                        currDelta = initialDelta -m[solution.sequence[j - 1]][solution.sequence[j]] 
+                                                 + m[solution.sequence[j - 1]][solution.sequence[i]] 
+                                                 + m[solution.sequence[i + 2]][solution.sequence[j]];
                     }
 
                     if(currDelta < bestDelta){
@@ -401,16 +397,44 @@ bool BestImprovementOrOpt(Solution& tspSol, double** m, int dimension, int moved
         orOpt3_time_ptr->accumulatedTime += orOpt3_time_ptr->endTime - orOpt3_time_ptr->beginTime;
     }
 
-    if(bestDelta < 0){
+    if(bestCost < solution.cost){
         //Reinsertion Case
         if(movedBlockSize == 1){
             orOpt_time_ptr->beginTime = std::clock();
 
-            int reinsertedNode = tspSol.sequence[best_i];
-            tspSol.sequence.erase(tspSol.sequence.begin() + best_i);
-            tspSol.sequence.insert(tspSol.sequence.begin() + best_j, reinsertedNode);
+            int reinsertedPortion = solution.sequence[best_i];
+            solution.sequence.erase(solution.sequence.begin() + best_i);
+            solution.sequence.insert(solution.sequence.begin() + best_j, reinsertedPortion);
 
-            tspSol.cost += bestDelta;
+            solution.cost += bestCost;
+
+            //Swap and concats
+            if(best_i > best_j){
+                swap(best_i, best_j);
+            }
+
+            for(int i = best_i; i <= best_j; i++){
+                subseqMatrix[i][i].delayCost = (i > 0);
+                subseqMatrix[i][i].accumulatedCost = 0;
+                subseqMatrix[i][i].duration = 0;
+                subseqMatrix[i][i].firstNode = solution.sequence[i];
+                subseqMatrix[i][i].lastNode = solution.sequence[i];
+            }
+
+            for(int i = 0; i < best_i; i++){  
+                for(int j = best_i; j < graphSize; j++){
+                    subseqMatrix[i][j] = Subsequence::Concatenate(subseqMatrix[i][j - 1], subseqMatrix[j][j], m);
+                    subseqMatrix[j][i] = Subsequence::Concatenate(subseqMatrix[j][j], subseqMatrix[j - 1][i], m);
+                }
+            }
+
+            for(int i = best_i; i <= best_j; i++){  
+                for(int j = i + 1; j < graphSize; j++){
+                    subseqMatrix[i][j] = Subsequence::Concatenate(subseqMatrix[i][j - 1], subseqMatrix[j][j], m); 
+                    subseqMatrix[j][i] = Subsequence::Concatenate(subseqMatrix[j][j], subseqMatrix[j - 1][i], m);   
+                }
+            }
+
 
             orOpt_time_ptr->endTime = std::clock();
             orOpt_time_ptr->accumulatedTime += orOpt_time_ptr->endTime - orOpt_time_ptr->beginTime;
@@ -421,11 +445,11 @@ bool BestImprovementOrOpt(Solution& tspSol, double** m, int dimension, int moved
         if(movedBlockSize == 2){
             orOpt2_time_ptr->beginTime = std::clock();
 
-            vector<int> reinsertSequence(tspSol.sequence.begin() + best_i, tspSol.sequence.begin() + best_i + 2);
-            tspSol.sequence.erase(tspSol.sequence.begin() + best_i, tspSol.sequence.begin() + best_i + 2);
-            tspSol.sequence.insert(tspSol.sequence.begin() + best_j, reinsertSequence.begin(), reinsertSequence.end());
+            vector<int> reinsertSequence(solution.sequence.begin() + best_i, solution.sequence.begin() + best_i + 2);
+            solution.sequence.erase(solution.sequence.begin() + best_i, solution.sequence.begin() + best_i + 2);
+            solution.sequence.insert(solution.sequence.begin() + best_j, reinsertSequence.begin(), reinsertSequence.end());
 
-            tspSol.cost += bestDelta;
+            solution.cost += bestDelta;
 
             orOpt2_time_ptr->endTime = std::clock();
             orOpt2_time_ptr->accumulatedTime += orOpt2_time_ptr->endTime - orOpt2_time_ptr->beginTime;
@@ -436,11 +460,11 @@ bool BestImprovementOrOpt(Solution& tspSol, double** m, int dimension, int moved
         if(movedBlockSize == 3){
             orOpt3_time_ptr->beginTime = std::clock();
 
-            vector<int> reinsertSequence(tspSol.sequence.begin() + best_i, tspSol.sequence.begin() + best_i + 3);
-            tspSol.sequence.erase(tspSol.sequence.begin() + best_i, tspSol.sequence.begin() + best_i + 3);
-            tspSol.sequence.insert(tspSol.sequence.begin() + best_j, reinsertSequence.begin(), reinsertSequence.end());
+            vector<int> reinsertSequence(solution.sequence.begin() + best_i, solution.sequence.begin() + best_i + 3);
+            solution.sequence.erase(solution.sequence.begin() + best_i, solution.sequence.begin() + best_i + 3);
+            solution.sequence.insert(solution.sequence.begin() + best_j, reinsertSequence.begin(), reinsertSequence.end());
 
-            tspSol.cost += bestDelta;
+            solution.cost += bestDelta;
 
             orOpt3_time_ptr->endTime = std::clock();
             orOpt3_time_ptr->accumulatedTime += orOpt3_time_ptr->endTime - orOpt3_time_ptr->beginTime;
