@@ -156,7 +156,7 @@ Solution BuildSolution(double** distMatrix, int dimension)
     }
 
     solution.sequence.push_back(1);
-    solution.cost = CalculateSequenceCost(solution.sequence, distMatrix, dimension);
+    //solution.cost = CalculateSequenceCost(solution.sequence, distMatrix, dimension); No Need now, it's calc'd on ILS()
 
     buildSol_time_ptr->endTime = std::clock();
     buildSol_time_ptr->accumulatedTime += buildSol_time_ptr->endTime - buildSol_time_ptr->beginTime;
@@ -639,7 +639,7 @@ Solution IteratedLocalSearch(int maxIters, int maxIterILS, Data& data)
         currBestSolution.sequence = currIterSolution.sequence;
 
         currIterSolution.cost = subseqMatrix[0][data.getDimension()].accumulatedCost;
-        currBestSolution.cost = currIterSolution.cost; //TODO: Check if this can be skipped
+        currBestSolution.cost = currIterSolution.cost;
 
         int iterILS = 0;
 
