@@ -34,8 +34,8 @@ struct Subsequence {
         double temp = m[sigma1.lastNode][sigma2.firstNode];
 
         sigma.delayCost = sigma1.delayCost + sigma2.delayCost;
-        sigma.duration = sigma1.duration + sigma2.duration;
-        sigma.accumulatedCost = sigma1.accumulatedCost + (sigma1.duration + temp)+ sigma2.accumulatedCost;
+        sigma.duration = sigma1.duration + temp + sigma2.duration;
+        sigma.accumulatedCost = sigma1.accumulatedCost + sigma2.delayCost * (sigma1.duration + temp) + sigma2.accumulatedCost;
     
         sigma.firstNode = sigma1.firstNode;
         sigma.lastNode = sigma2.lastNode;
@@ -86,9 +86,9 @@ void UpdateAllSubSeqs(Solution& solution, vector<vector<Subsequence>>& subseqMat
 
     //First, deals with subseqs comprised of only 1 node
     for(int i = 0; i < solNodeQuant; i++){
-        subseqMatrix[i][i].duration = (i > 0);
+        subseqMatrix[i][i].delayCost = (i > 0);
         subseqMatrix[i][i].accumulatedCost = 0;
-        subseqMatrix[i][i].delayCost = 0;
+        subseqMatrix[i][i].duration = 0;
         subseqMatrix[i][i].firstNode = solution.sequence[i];
         subseqMatrix[i][i].lastNode = solution.sequence[i];
     }
