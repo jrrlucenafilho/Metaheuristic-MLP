@@ -3,6 +3,7 @@
 #include <vector>
 #include <algorithm>
 #include <ctime>
+#include <limits>
 
 using namespace std;
 
@@ -107,19 +108,17 @@ void UpdateAllSubSeqs(Solution& solution, vector<vector<Subsequence>>& subseqMat
     }
 }
 
-//TODO: test if 'sequence.size()' should be changed to 'dimension'
-double CalculateSequenceCost(vector<int>& sequence, double** m)
+double CalculateSequenceCost(vector<int>& sequence, double** m, int dimension)
 {
-    double cost = 0;
     double costSum = 0;
     int formerNodeCost;
 
-    for(int i = 0, j = 1; i < (int)sequence.size() - 1; i++, j++){
-        int formerNodeCost = m[sequence[i]][sequence[j]];
+    for(int i = 0, j = 1; i < dimension; i++, j++){
+        formerNodeCost = m[sequence[i]][sequence[j]];
         costSum += formerNodeCost;
     }
 
-    return cost;
+    return costSum;
 }
 
 /**
@@ -155,7 +154,7 @@ Solution BuildSolution(double** distMatrix, int dimension)
     }
 
     solution.sequence.push_back(1);
-    solution.cost = CalculateSequenceCost(solution.sequence, distMatrix);
+    solution.cost = CalculateSequenceCost(solution.sequence, distMatrix, dimension);
 
     buildSol_time_ptr->endTime = std::clock();
     buildSol_time_ptr->accumulatedTime += buildSol_time_ptr->endTime - buildSol_time_ptr->beginTime;
@@ -257,6 +256,14 @@ bool BestImprovement2Opt(Solution& solution, vector<vector<Subsequence>>& subseq
     if(bestCost < solution.cost){
         reverse(solution.sequence.begin() + best_i, solution.sequence.begin() + best_j + 1);
         solution.cost = bestCost;
+
+    for(int i = best_i; i <= best_j; i++){
+        subseqMatrix[i][i].delayCost = (i > 0);
+        subseqMatrix[i][i].accumulatedCost = 0;
+        subseqMatrix[i][i].duration = 0;
+        subseqMatrix[i][i].firstNode = solution.sequence[i];
+        subseqMatrix[i][i].lastNode = solution.sequence[i];
+    }
 
         //Concats
         for(int i = best_i; i <= best_j; i++){
@@ -472,25 +479,22 @@ bool BestImprovementOrOpt(Solution& solution, vector<vector<Subsequence>>& subse
             orOpt2_time_ptr->accumulatedTime += orOpt2_time_ptr->endTime - orOpt2_time_ptr->beginTime;
             orOpt2_time_ptr->accumulatedTime += var_creation_time.accumulatedTime;
         }
-        
-        return true;
-    }
 
-    //OrOpt-3 case (cond)
-    if((movedBlockSize == 3) && (bestCost < subseqMatrix[0][dimension].accumulatedCost)){
-        orOpt3_time_ptr->beginTime = std::clock();
+        //OrOpt-3 case (Appears to be better here)
+        if((movedBlockSize == 3) && ((bestCost < subseqMatrix[0][dimension].accumulatedCost))){
+            orOpt3_time_ptr->beginTime = std::clock();
 
-        vector<int> reinsertSequence(solution.sequence.begin() + best_i, solution.sequence.begin() + best_i + 3);
-        solution.sequence.erase(solution.sequence.begin() + best_i, solution.sequence.begin() + best_i + 3);
-        solution.sequence.insert(solution.sequence.begin() + best_j, reinsertSequence.begin(), reinsertSequence.end());
+            vector<int> reinsertSequence(solution.sequence.begin() + best_i, solution.sequence.begin() + best_i + 3);
+            solution.sequence.erase(solution.sequence.begin() + best_i, solution.sequence.begin() + best_i + 3);
+            solution.sequence.insert(solution.sequence.begin() + best_j, reinsertSequence.begin(), reinsertSequence.end());
 
-        solution.cost = bestCost;
+            solution.cost = bestCost;
 
-        if(best_i > best_j){
-            swap(best_i, best_j);
-        }
+            if(best_i > best_j){
+                swap(best_i, best_j);
+            }
 
-        for(int i = best_i; i <= best_j + 2; i++){
+            for(int i = best_i; i <= best_j + 2; i++){
                 subseqMatrix[i][i].delayCost = (i > 0);
                 subseqMatrix[i][i].accumulatedCost = 0;
                 subseqMatrix[i][i].duration = 0;
@@ -512,9 +516,10 @@ bool BestImprovementOrOpt(Solution& solution, vector<vector<Subsequence>>& subse
                 }
             }
 
-        orOpt3_time_ptr->endTime = std::clock();
-        orOpt3_time_ptr->accumulatedTime += orOpt3_time_ptr->endTime - orOpt3_time_ptr->beginTime;
-        orOpt3_time_ptr->accumulatedTime += var_creation_time.accumulatedTime;
+            orOpt3_time_ptr->endTime = std::clock();
+            orOpt3_time_ptr->accumulatedTime += orOpt3_time_ptr->endTime - orOpt3_time_ptr->beginTime;
+            orOpt3_time_ptr->accumulatedTime += var_creation_time.accumulatedTime;
+        }
 
         return true;
     }
@@ -608,7 +613,7 @@ Solution Disturbance(Solution& solution, vector<vector<Subsequence>>& subseqMatr
     copiedSeq.insert(copiedSeq.begin() + subseq1Index_begin + subseq2Length + inbetweenSubseqsLength, subseq1.begin(), subseq1.end());
 
     //Calculating cost and attributing to disturbed solution
-    disturbedSol.cost = CalculateSequenceCost(copiedSeq, m);
+    disturbedSol.cost = CalculateSequenceCost(copiedSeq, m, dimension);
     disturbedSol.sequence = copiedSeq;
 
     disturbance_time_ptr->endTime = std::clock();
@@ -629,7 +634,7 @@ Solution IteratedLocalSearch(int maxIters, int maxIterILS, Data& data)
         vector<vector<Subsequence>> subseqMatrix(data.getDimension() + 1, vector<Subsequence>(data.getDimension() + 1));
 
         UpdateAllSubSeqs(currIterSolution, subseqMatrix, data.getMatrixCost());
-        currBestSolution = currIterSolution;
+        currBestSolution.sequence = currIterSolution.sequence;
 
         currIterSolution.cost = subseqMatrix[0][data.getDimension()].accumulatedCost;
         currBestSolution.cost = currIterSolution.cost; //TODO: Check if this can be skipped
@@ -641,19 +646,25 @@ Solution IteratedLocalSearch(int maxIters, int maxIterILS, Data& data)
             //By doing small modifications to it
             LocalSearch(currIterSolution, subseqMatrix, data.getMatrixCost(), data.getDimension());
 
-            if(currIterSolution.cost < currBestSolution.cost){
-                currBestSolution = currIterSolution;
+            if(currIterSolution.cost < currBestSolution.cost){  //Freezing on LocalSearch() if this happens (or first iter anw)
+                currBestSolution.cost = currIterSolution.cost;
+                currBestSolution.sequence = currIterSolution.sequence;
                 iterILS = 0;
             }
 
             //If not possible to make it better, shake the current best solution up a lil'
             //to see if we didn't just go into a 'local best pitfall'
             currIterSolution = Disturbance(currBestSolution, subseqMatrix, data.getMatrixCost(), data.getDimension());
+
+            UpdateAllSubSeqs(currIterSolution, subseqMatrix, data.getMatrixCost());
+            //currIterSolution.cost = CalculateSequenceCost(currIterSolution.sequence, data.getMatrixCost(), data.getDimension());
+
             iterILS++;
         }
 
         if(currBestSolution.cost < bestOfAllSolution.cost){
-            bestOfAllSolution = currBestSolution;
+            bestOfAllSolution.sequence = currBestSolution.sequence;
+            bestOfAllSolution.cost = currBestSolution.cost;
         }
     }
 
@@ -665,8 +676,9 @@ int main(int argc, char** argv)
     int maxIter = 10;
     int maxIterILS;
     double costsSum = 0;
+    double minAchievedCostOverall = std::numeric_limits<double>::infinity();
     auto data = Data(argc, argv[1]);
-    Solution solution;
+    Solution solution, finalSol;
     my_time_t ILS_iter_time;
 
     data.read();
@@ -696,8 +708,13 @@ int main(int argc, char** argv)
 
         solution = IteratedLocalSearch(maxIter, maxIterILS, data);
 
-        solution.cost = CalculateSequenceCost(solution.sequence, data.getMatrixCost());
+        solution.cost = CalculateSequenceCost(solution.sequence, data.getMatrixCost(), data.getDimension());
         costsSum += solution.cost;
+
+        if(minAchievedCostOverall > solution.cost){
+            minAchievedCostOverall = solution.cost;
+            finalSol = solution;
+        }
 
         ILS_iter_time.endTime = std::clock();
         ILS_iter_time.accumulatedTime += ILS_iter_time.endTime - ILS_iter_time.beginTime;
@@ -707,12 +724,12 @@ int main(int argc, char** argv)
 
     cout << "-------------------------------\n";
     cout << "Instance Name: " << data.getInstanceName() << '\n';
-    cout << "Solution s = ";
+    //cout << "Solution s = ";
+    //for(size_t i = 0; i < solution.sequence.size() - 1; i++){
+    //    cout << solution.sequence[i] << " -> ";
+    //}
+    //cout << "1\n";
 
-    for(size_t i = 0; i < solution.sequence.size() - 1; i++){
-        cout << solution.sequence[i] << " -> ";
-    }
-    cout << "1\n";
     cout << "Average s cost: " << costsSum / 10 << '\n';
     cout << "Average CPU execution time: " << (ILS_iter_time.accumulatedTime / static_cast<double>(CLOCKS_PER_SEC)) / 10 << " s \n";
     cout << "-------------------------------\n";
