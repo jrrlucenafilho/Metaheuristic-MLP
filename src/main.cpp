@@ -110,15 +110,17 @@ void UpdateAllSubSeqs(Solution& solution, vector<vector<Subsequence>>& subseqMat
 
 double CalculateSequenceCost(vector<int>& sequence, double** m, int dimension)
 {
-    double costSum = 0;
-    int formerNodeCost;
+    double pastEdgesCost = 0;
+    double total = 0;   //Holds the accumulated branch cost (includeing current node)
+    double formerNodeCost;
 
     for(int i = 0, j = 1; i < dimension; i++, j++){
-        formerNodeCost = m[sequence[i]][sequence[j]];
-        costSum += formerNodeCost;
+        formerNodeCost = m[sequence[i]][sequence[j]];   //Cost of the edge between the former and current node
+        pastEdgesCost += formerNodeCost;  //Sum of all previous edges on the branch
+        total += pastEdgesCost + formerNodeCost;
     }
-
-    return costSum;
+    
+    return total;
 }
 
 /**
