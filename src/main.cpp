@@ -110,17 +110,17 @@ void UpdateAllSubSeqs(Solution& solution, vector<vector<Subsequence>>& subseqMat
 
 double CalculateSequenceCost(vector<int>& sequence, double** m, int dimension)
 {
-    double pastEdgesCost = 0;
-    double total = 0;   //Holds the accumulated branch cost (includeing current node)
-    double formerNodeCost;
+    double sum = 0;
+    double branchTotalCost = 0;   //Holds the accumulated branch cost (including current node)
+    double formerNodeCost = 0;
 
     for(int i = 0, j = 1; i < dimension; i++, j++){
         formerNodeCost = m[sequence[i]][sequence[j]];   //Cost of the edge between the former and current node
-        pastEdgesCost += formerNodeCost;  //Sum of all previous edges on the branch
-        total += pastEdgesCost + formerNodeCost;
+        sum += formerNodeCost;
+        branchTotalCost += sum;    //holds all previous edges on the branch
     }
     
-    return total;
+    return branchTotalCost;
 }
 
 /**
@@ -173,14 +173,14 @@ bool BestImprovementSwap(Solution& solution, vector<vector<Subsequence>>& subseq
     bestImprovSwap_time_ptr->beginTime = std::clock();
 
     //Inits
-    Subsequence sigma1, sigma2, sigma3, sigma4, sigmaLast;
+    Subsequence sigma1, sigma2, sigma3, sigmaLast;
     double bestCost = subseqMatrix[0][dimension].accumulatedCost;
     int graphSize = dimension + 1;
     int best_i = 0, best_j = 0;
 
     for(int i = 1; i < graphSize - 1; i++){
         for(int j = i + 1; j < graphSize - 1; j++){
-            if(j == i + 1){
+            if(j == i + 1){ //Case of neightboring nodes
                 sigma1 = Subsequence::Concatenate(subseqMatrix[0][i - 1], subseqMatrix[j][j], m);
                 sigma2 = Subsequence::Concatenate(sigma1, subseqMatrix[i][i], m);
                 sigmaLast = Subsequence::Concatenate(sigma2, subseqMatrix[j + 1][dimension], m);
@@ -334,73 +334,7 @@ bool BestImprovementOrOpt(Solution& solution, vector<vector<Subsequence>>& subse
             }
         }
 
-        orOpt_time_ptr->endTime = std::clock();
-        orOpt_time_ptr->accumulatedTime += orOpt_time_ptr->endTime - orOpt_time_ptr->beginTime;
-    }
-
-    //OrOpt-2 case
-    if(movedBlockSize == 2){
-        orOpt2_time_ptr->beginTime = std::clock();
-
-        for(int i = 1; i < graphSize - 2; i++){
-            for(int j = 1; j < graphSize - 3; j++){
-                if(i != j){
-                    if(i < j){
-                        sigma1 = Subsequence::Concatenate(subseqMatrix[0][i - 1], subseqMatrix[i + 2][j + 1], m);
-                        sigma2 = Subsequence::Concatenate(sigma1, subseqMatrix[i][i + 1], m);
-                        sigma3 = Subsequence::Concatenate(sigma2, subseqMatrix[j + 2][dimension], m);
-                    }else{
-                        sigma1 = Subsequence::Concatenate(subseqMatrix[0][j - 1], subseqMatrix[i][i + 1], m);
-                        sigma2 = Subsequence::Concatenate(sigma1, subseqMatrix[j][i - 1], m);
-                        sigma3 = Subsequence::Concatenate(sigma2, subseqMatrix[i + 2][dimension], m);
-                    }
-
-                    if(sigma3.accumulatedCost < bestCost){
-                        bestCost = sigma3.accumulatedCost;
-                        best_i = i;
-                        best_j = j;
-                    }
-                }
-            }
-        }
-
-        orOpt2_time_ptr->endTime = std::clock();
-        orOpt2_time_ptr->accumulatedTime += orOpt2_time_ptr->endTime - orOpt2_time_ptr->beginTime;
-    }
-
-    //OrOpt-3 case
-    if(movedBlockSize == 3){
-        orOpt3_time_ptr->beginTime = std::clock();
-
-        for(int i = 1; i < graphSize - 3; i++){
-            for(int j = 1; j < graphSize - 4; j++){
-                if(i != j){
-                    if(i < j){
-                        sigma1 = Subsequence::Concatenate(subseqMatrix[0][i - 1], subseqMatrix[i + 3][j + 2], m);
-                        sigma2 = Subsequence::Concatenate(sigma1, subseqMatrix[i][i + 2], m);
-                        sigma3 = Subsequence::Concatenate(sigma2, subseqMatrix[j + 3][dimension], m);
-                    }else{
-                        sigma1 = Subsequence::Concatenate(subseqMatrix[0][j - 1], subseqMatrix[i][i + 2], m);
-                        sigma2 = Subsequence::Concatenate(sigma1, subseqMatrix[j][i - 1], m);
-                        sigma3 = Subsequence::Concatenate(sigma2, subseqMatrix[i + 3][dimension], m);
-                    }
-
-                    if(sigma3.accumulatedCost < bestCost){
-                        bestCost = sigma3.accumulatedCost;
-                        best_i = i;
-                        best_j = j;
-                    }
-                }
-            }
-        }
-
-        orOpt3_time_ptr->endTime = std::clock();
-        orOpt3_time_ptr->accumulatedTime += orOpt3_time_ptr->endTime - orOpt3_time_ptr->beginTime;
-    }
-
-    if(bestCost < solution.cost){
-        //Reinsertion Case
-        if(movedBlockSize == 1){
+        if(bestCost < solution.cost){
             orOpt_time_ptr->beginTime = std::clock();
 
             int reinsertPortion = solution.sequence[best_i];
@@ -439,10 +373,44 @@ bool BestImprovementOrOpt(Solution& solution, vector<vector<Subsequence>>& subse
             orOpt_time_ptr->endTime = std::clock();
             orOpt_time_ptr->accumulatedTime += orOpt_time_ptr->endTime - orOpt_time_ptr->beginTime;
             orOpt_time_ptr->accumulatedTime += var_creation_time.accumulatedTime;
+
+            return true;
         }
 
-        //OrOpt-2 case
-        if(movedBlockSize == 2){
+        orOpt_time_ptr->endTime = std::clock();
+        orOpt_time_ptr->accumulatedTime += orOpt_time_ptr->endTime - orOpt_time_ptr->beginTime;
+
+        return false;
+    }
+
+    //OrOpt-2 case
+    if(movedBlockSize == 2){
+        orOpt2_time_ptr->beginTime = std::clock();
+
+        for(int i = 1; i < graphSize - 2; i++){
+            for(int j = 1; j < graphSize - 3; j++){
+                if(i != j){
+                    if(i < j){
+                        sigma1 = Subsequence::Concatenate(subseqMatrix[0][i - 1], subseqMatrix[i + 2][j + 1], m);
+                        sigma2 = Subsequence::Concatenate(sigma1, subseqMatrix[i][i + 1], m);
+                        sigma3 = Subsequence::Concatenate(sigma2, subseqMatrix[j + 2][dimension], m);
+                    }else{
+                        sigma1 = Subsequence::Concatenate(subseqMatrix[0][j - 1], subseqMatrix[i][i + 1], m);
+                        sigma2 = Subsequence::Concatenate(sigma1, subseqMatrix[j][i - 1], m);
+                        sigma3 = Subsequence::Concatenate(sigma2, subseqMatrix[i + 2][dimension], m);
+                    }
+
+                    if(sigma3.accumulatedCost < bestCost){
+                        bestCost = sigma3.accumulatedCost;
+                        best_i = i;
+                        best_j = j;
+                    }
+                }
+            }
+        }
+
+        if(bestCost < solution.cost){
+            //OrOpt-2 case
             orOpt2_time_ptr->beginTime = std::clock();
 
             vector<int> reinsertPortion(solution.sequence.begin() + best_i, solution.sequence.begin() + best_i + 2);
@@ -480,10 +448,44 @@ bool BestImprovementOrOpt(Solution& solution, vector<vector<Subsequence>>& subse
             orOpt2_time_ptr->endTime = std::clock();
             orOpt2_time_ptr->accumulatedTime += orOpt2_time_ptr->endTime - orOpt2_time_ptr->beginTime;
             orOpt2_time_ptr->accumulatedTime += var_creation_time.accumulatedTime;
+
+            return true;
+        }
+        
+        orOpt2_time_ptr->endTime = std::clock();
+        orOpt2_time_ptr->accumulatedTime += orOpt2_time_ptr->endTime - orOpt2_time_ptr->beginTime;
+
+        return false;
+    }
+
+    //OrOpt-3 case
+    if(movedBlockSize == 3){
+        orOpt3_time_ptr->beginTime = std::clock();
+
+        for(int i = 1; i < graphSize - 3; i++){
+            for(int j = 1; j < graphSize - 4; j++){
+                if(i != j){
+                    if(i < j){
+                        sigma1 = Subsequence::Concatenate(subseqMatrix[0][i - 1], subseqMatrix[i + 3][j + 2], m);
+                        sigma2 = Subsequence::Concatenate(sigma1, subseqMatrix[i][i + 2], m);
+                        sigma3 = Subsequence::Concatenate(sigma2, subseqMatrix[j + 3][dimension], m);
+                    }else{
+                        sigma1 = Subsequence::Concatenate(subseqMatrix[0][j - 1], subseqMatrix[i][i + 2], m);
+                        sigma2 = Subsequence::Concatenate(sigma1, subseqMatrix[j][i - 1], m);
+                        sigma3 = Subsequence::Concatenate(sigma2, subseqMatrix[i + 3][dimension], m);
+                    }
+
+                    if(sigma3.accumulatedCost < bestCost){
+                        bestCost = sigma3.accumulatedCost;
+                        best_i = i;
+                        best_j = j;
+                    }
+                }
+            }
         }
 
-        //OrOpt-3 case (Appears to be better here)
-        if((movedBlockSize == 3) && ((bestCost < subseqMatrix[0][dimension].accumulatedCost))){
+        if((bestCost < solution.cost) && (bestCost < subseqMatrix[0][dimension].accumulatedCost)){
+            //OrOpt-3 case (Appears to be better here)
             orOpt3_time_ptr->beginTime = std::clock();
 
             vector<int> reinsertSequence(solution.sequence.begin() + best_i, solution.sequence.begin() + best_i + 3);
@@ -521,9 +523,14 @@ bool BestImprovementOrOpt(Solution& solution, vector<vector<Subsequence>>& subse
             orOpt3_time_ptr->endTime = std::clock();
             orOpt3_time_ptr->accumulatedTime += orOpt3_time_ptr->endTime - orOpt3_time_ptr->beginTime;
             orOpt3_time_ptr->accumulatedTime += var_creation_time.accumulatedTime;
+
+            return true;
         }
 
-        return true;
+        orOpt3_time_ptr->endTime = std::clock();
+        orOpt3_time_ptr->accumulatedTime += orOpt3_time_ptr->endTime - orOpt3_time_ptr->beginTime;
+    
+        return false;
     }
 
     return false;
@@ -561,7 +568,7 @@ void LocalSearch(Solution& solution, vector<vector<Subsequence>>& subseqMatrix, 
                 break;
         }
 
-        //Checks if solution's improved, erasing neighborhood structure if not
+        //Checks if solution's improved, erasing neighborhood structure from vec if not
         if(solutionImproved){
             NH_structures = {1, 2, 3, 4, 5};
         }else{
@@ -646,20 +653,21 @@ Solution IteratedLocalSearch(int maxIters, int maxIterILS, Data& data)
         while(iterILS <= maxIterILS){
             //Tries to enhance the fairly-guessed solution
             //By doing small modifications to it
-            LocalSearch(currIterSolution, subseqMatrix, data.getMatrixCost(), data.getDimension());
+            LocalSearch(currIterSolution, subseqMatrix, data.getMatrixCost(), data.getDimension()); //TODO: Check freezing here
 
-            if(currIterSolution.cost < currBestSolution.cost){  //Freezing on LocalSearch() if this happens (or first iter anw)
+            if(currIterSolution.cost < currBestSolution.cost){
                 currBestSolution.cost = currIterSolution.cost;
                 currBestSolution.sequence = currIterSolution.sequence;
                 iterILS = 0;
             }
 
             //If not possible to make it better, shake the current best solution up a lil'
-            //to see if we didn't just go into a 'local best pitfall'
+            //to see if we didn't just go into a 'local best pitfall'   //TODO: Put this to it's own sol
             currIterSolution = Disturbance(currBestSolution, subseqMatrix, data.getMatrixCost(), data.getDimension());
 
+            //Update subseqs and check if cost got better after doing disturbance
             UpdateAllSubSeqs(currIterSolution, subseqMatrix, data.getMatrixCost());
-            //currIterSolution.cost = CalculateSequenceCost(currIterSolution.sequence, data.getMatrixCost(), data.getDimension());
+            currIterSolution.cost = CalculateSequenceCost(currIterSolution.sequence, data.getMatrixCost(), data.getDimension());
 
             iterILS++;
         }
@@ -693,11 +701,13 @@ int main(int argc, char** argv)
     cout << "Wait for it...\n";
 
     //Defining Iters
-    if(data.getDimension() >= 150){
-        maxIterILS = data.getDimension() / 2.0;
-    }else{
-        maxIterILS = data.getDimension();
-    }
+    //if(data.getDimension() >= 150){
+    //    maxIterILS = data.getDimension() / 2.0;
+    //}else{
+    //    maxIterILS = data.getDimension();
+    //}
+
+    maxIterILS = min(100, data.getDimension());
 
     cout << "-------------------------------\n";
     cout << "10 Iteration costs:\n";
@@ -713,15 +723,15 @@ int main(int argc, char** argv)
         solution.cost = CalculateSequenceCost(solution.sequence, data.getMatrixCost(), data.getDimension());
         costsSum += solution.cost;
 
-        if(minAchievedCostOverall > solution.cost){
-            minAchievedCostOverall = solution.cost;
-            finalSol = solution;
-        }
-
         ILS_iter_time.endTime = std::clock();
         ILS_iter_time.accumulatedTime += ILS_iter_time.endTime - ILS_iter_time.beginTime;
 
         cout << "Cost of s (iter " << i + 1 << "): " << solution.cost << '\n';
+    }
+
+    if(minAchievedCostOverall > solution.cost){
+        minAchievedCostOverall = solution.cost;
+        finalSol = solution;
     }
 
     cout << "-------------------------------\n";
