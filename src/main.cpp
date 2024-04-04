@@ -12,17 +12,6 @@ typedef struct {
     double cost = 0.0;
 } Solution;
 
-struct InsertionInfo {
-    //Node that'll be inserted as graph gets built
-    int insertedNode;
-    //Edge that'll be removed as insertedNode gets added into the graph
-    //To be substituted by 2 other edges. Both of which connect one previously-interconnected
-    //node to to the new insertedNode 
-    int removedGraphEdge;
-    //Cost of inserting this new node into the graph, among tho other nodes
-    double cost;
-};
-
 //Aux structures. Holds relevant data for a given subsequence MLP
 struct Subsequence {
     double duration, accumulatedCost;   //T, C
@@ -335,8 +324,6 @@ bool BestImprovementOrOpt(Solution& solution, vector<vector<Subsequence>>& subse
         }
 
         if(bestCost < solution.cost){
-            orOpt_time_ptr->beginTime = std::clock();
-
             int reinsertPortion = solution.sequence[best_i];
             solution.sequence.erase(solution.sequence.begin() + best_i);
             solution.sequence.insert(solution.sequence.begin() + best_j, reinsertPortion);
@@ -379,6 +366,7 @@ bool BestImprovementOrOpt(Solution& solution, vector<vector<Subsequence>>& subse
 
         orOpt_time_ptr->endTime = std::clock();
         orOpt_time_ptr->accumulatedTime += orOpt_time_ptr->endTime - orOpt_time_ptr->beginTime;
+        orOpt_time_ptr->accumulatedTime += var_creation_time.accumulatedTime;
 
         return false;
     }
@@ -410,9 +398,6 @@ bool BestImprovementOrOpt(Solution& solution, vector<vector<Subsequence>>& subse
         }
 
         if(bestCost < solution.cost){
-            //OrOpt-2 case
-            orOpt2_time_ptr->beginTime = std::clock();
-
             vector<int> reinsertPortion(solution.sequence.begin() + best_i, solution.sequence.begin() + best_i + 2);
             solution.sequence.erase(solution.sequence.begin() + best_i, solution.sequence.begin() + best_i + 2);
             solution.sequence.insert(solution.sequence.begin() + best_j, reinsertPortion.begin(), reinsertPortion.end());
@@ -454,6 +439,7 @@ bool BestImprovementOrOpt(Solution& solution, vector<vector<Subsequence>>& subse
         
         orOpt2_time_ptr->endTime = std::clock();
         orOpt2_time_ptr->accumulatedTime += orOpt2_time_ptr->endTime - orOpt2_time_ptr->beginTime;
+        orOpt_time_ptr->accumulatedTime += var_creation_time.accumulatedTime;
 
         return false;
     }
@@ -484,10 +470,8 @@ bool BestImprovementOrOpt(Solution& solution, vector<vector<Subsequence>>& subse
             }
         }
 
+        //Concats
         if((bestCost < solution.cost) && (bestCost < subseqMatrix[0][dimension].accumulatedCost)){
-            //OrOpt-3 case (Appears to be better here)
-            orOpt3_time_ptr->beginTime = std::clock();
-
             vector<int> reinsertSequence(solution.sequence.begin() + best_i, solution.sequence.begin() + best_i + 3);
             solution.sequence.erase(solution.sequence.begin() + best_i, solution.sequence.begin() + best_i + 3);
             solution.sequence.insert(solution.sequence.begin() + best_j, reinsertSequence.begin(), reinsertSequence.end());
@@ -529,6 +513,7 @@ bool BestImprovementOrOpt(Solution& solution, vector<vector<Subsequence>>& subse
 
         orOpt3_time_ptr->endTime = std::clock();
         orOpt3_time_ptr->accumulatedTime += orOpt3_time_ptr->endTime - orOpt3_time_ptr->beginTime;
+        orOpt_time_ptr->accumulatedTime += var_creation_time.accumulatedTime;
     
         return false;
     }
@@ -662,7 +647,7 @@ Solution IteratedLocalSearch(int maxIters, int maxIterILS, Data& data)
             }
 
             //If not possible to make it better, shake the current best solution up a lil'
-            //to see if we didn't just go into a 'local best pitfall'   //TODO: Put this to it's own sol
+            //to see if we didn't just go into a 'local best pitfall'
             currIterSolution = Disturbance(currBestSolution, subseqMatrix, data.getMatrixCost(), data.getDimension());
 
             //Update subseqs and check if cost got better after doing disturbance
