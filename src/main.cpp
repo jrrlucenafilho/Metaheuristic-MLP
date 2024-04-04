@@ -156,7 +156,7 @@ Solution BuildSolution(double** distMatrix, int dimension)
 /*BestImprovement funcs with differing methods to be used for RVND in LocalSearch()*/
 //Tries to get the best swap possible in the solution
 //As in the one that best minimizes the solution's cost
-//"m" here means distMatrix //TODO: cost as an arg rather than solution.cost?
+//"m" here means distMatrix
 bool BestImprovementSwap(Solution& solution, vector<vector<Subsequence>>& subseqMatrix, double** m, int dimension)
 {
     bestImprovSwap_time_ptr->beginTime = std::clock();
@@ -404,7 +404,6 @@ bool BestImprovementOrOpt(Solution& solution, vector<vector<Subsequence>>& subse
             solution.sequence.erase(solution.sequence.begin() + best_i, solution.sequence.begin() + best_i + 2);
             solution.sequence.insert(solution.sequence.begin() + best_j, reinsertPortion.begin(), reinsertPortion.end());
 
-            //bestCost = solution.cost; //TODO: Might have to change this around, it's the sole one out
             solution.cost = bestCost;
 
             if(best_i > best_j){
@@ -537,18 +536,17 @@ void LocalSearch(Solution& solution, vector<vector<Subsequence>>& subseqMatrix, 
     while(!NH_structures.empty()){
         int rand_n = rand() % NH_structures.size();
 
-        //Chooses randomly
         switch(NH_structures[rand_n]){
             case 1:
                 solutionImproved = BestImprovementSwap(solution, subseqMatrix, distMatrix, dimension);
                 break;
-            case 2: //TODO: Also suspicious behavior: Not changing cost but returning true
+            case 2: 
                 solutionImproved = BestImprovement2Opt(solution, subseqMatrix, distMatrix, dimension);
                 break;
             case 3:
                 solutionImproved = BestImprovementOrOpt(solution, subseqMatrix, distMatrix, dimension, 1);
                 break;
-            case 4: //TODO: Suspicious behavior: solution.cost and subseqMatrix[0][dimension].accumulatedCost (is higher)
+            case 4:
                 solutionImproved = BestImprovementOrOpt(solution, subseqMatrix, distMatrix, dimension, 2);
                 break;
             case 5:
@@ -571,7 +569,7 @@ int BoundedRand(int min, int max)
 }
 
 //Return Solution, may have to call a cost-calc function inside here
-Solution Disturbance(Solution& solution, vector<vector<Subsequence>>& subseqMatrix, double** m, int dimension)
+Solution Disturbance(Solution& solution, double** m, int dimension)
 {
     disturbance_time_ptr->beginTime = std::clock();
 
@@ -651,7 +649,7 @@ Solution IteratedLocalSearch(int maxIters, int maxIterILS, Data& data)
 
             //If not possible to make it better, shake the current best solution up a lil'
             //to see if we didn't just go into a 'local best pitfall'
-            currIterSolution = Disturbance(currBestSolution, subseqMatrix, data.getMatrixCost(), data.getDimension());
+            currIterSolution = Disturbance(currBestSolution, data.getMatrixCost(), data.getDimension());
 
             //Update subseqs and check if cost got better after doing disturbance
             UpdateAllSubSeqs(currIterSolution, subseqMatrix, data.getMatrixCost());
@@ -717,11 +715,11 @@ int main(int argc, char** argv)
 
     cout << "-------------------------------\n";
     cout << "Instance Name: " << data.getInstanceName() << '\n';
-    //cout << "Solution s = ";
-    //for(size_t i = 0; i < solution.sequence.size() - 1; i++){
-    //    cout << solution.sequence[i] << " -> ";
-    //}
-    //cout << "1\n";
+    cout << "Solution s = ";
+    for(size_t i = 0; i < solution.sequence.size() - 1; i++){
+        cout << solution.sequence[i] << " -> ";
+    }
+    cout << "1\n";
 
     cout << "Average s cost: " << costsSum / 10 << '\n';
     cout << "Average CPU execution time: " << (ILS_iter_time.accumulatedTime / static_cast<double>(CLOCKS_PER_SEC)) / 10 << " s \n";
