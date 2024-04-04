@@ -670,7 +670,6 @@ int main(int argc, char** argv)
     int maxIter = 10;
     int maxIterILS;
     double costsSum = 0;
-    double minAchievedCostOverall = std::numeric_limits<double>::infinity();
     auto data = Data(argc, argv[1]);
     Solution solution, finalSol;
     my_time_t ILS_iter_time;
@@ -702,11 +701,6 @@ int main(int argc, char** argv)
         ILS_iter_time.accumulatedTime += ILS_iter_time.endTime - ILS_iter_time.beginTime;
 
         cout << "Cost of s (iter " << i + 1 << "): " << solution.cost << '\n';
-    }
-
-    if(minAchievedCostOverall > solution.cost){
-        minAchievedCostOverall = solution.cost;
-        finalSol = solution;
     }
 
     //Final avgs and result
