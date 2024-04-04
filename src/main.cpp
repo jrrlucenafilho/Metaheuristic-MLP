@@ -680,8 +680,6 @@ int main(int argc, char** argv)
     size_t n = data.getDimension();
 
     cout << "Dimension: " << n << '\n';
-    //cout << "DistanceMatrix: " << '\n';
-    //data.printMatrixDist();
     cout << "Wait for it...\n";
 
     maxIterILS = min(100, data.getDimension());
@@ -711,6 +709,7 @@ int main(int argc, char** argv)
         finalSol = solution;
     }
 
+    //Final avgs and result
     cout << "-------------------------------\n";
     cout << "Instance Name: " << data.getInstanceName() << '\n';
     cout << "Solution s = ";

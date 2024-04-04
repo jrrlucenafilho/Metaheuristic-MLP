@@ -19,17 +19,6 @@ foreach ($instanceName in $instanceNames) {
     # Split the output into lines
     $lines = $output -split "`n"
 
-    # Initialize variables
-    $cost = "N/A"
-    $cpuExecutionTime = "N/A"
-    $buildSolution = "N/A"
-    $bestImprovementSwap = "N/A"
-    $orOpt = "N/A"
-    $orOpt2 = "N/A"
-    $orOpt3 = "N/A"
-    $twoOpt = "N/A"
-    $disturbance = "N/A"
-
     # Loop through each line
     foreach ($line in $lines) {
         # Extract the cost
