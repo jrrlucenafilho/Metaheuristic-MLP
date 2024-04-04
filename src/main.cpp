@@ -106,7 +106,7 @@ double CalculateSequenceCost(vector<int>& sequence, double** m, int dimension)
     for(int i = 0, j = 1; i < dimension; i++, j++){
         formerNodeCost = m[sequence[i]][sequence[j]];   //Cost of the edge between the former and current node
         sum += formerNodeCost;
-        branchTotalCost += sum;    //holds all previous edges on the branch
+        branchTotalCost += sum;    //holds all costs of previous edges on the branch
     }
     
     return branchTotalCost;
@@ -145,7 +145,6 @@ Solution BuildSolution(double** distMatrix, int dimension)
     }
 
     solution.sequence.push_back(1);
-    //solution.cost = CalculateSequenceCost(solution.sequence, distMatrix, dimension); No Need now, it's calc'd on ILS()
 
     buildSol_time_ptr->endTime = std::clock();
     buildSol_time_ptr->accumulatedTime += buildSol_time_ptr->endTime - buildSol_time_ptr->beginTime;
@@ -473,7 +472,7 @@ bool BestImprovementOrOpt(Solution& solution, vector<vector<Subsequence>>& subse
         }
 
         //Concats
-        if(/*(bestCost < solution.cost) && */(bestCost < subseqMatrix[0][dimension].accumulatedCost)){
+        if((bestCost < solution.cost)){
             vector<int> reinsertSequence(solution.sequence.begin() + best_i, solution.sequence.begin() + best_i + 3);
             solution.sequence.erase(solution.sequence.begin() + best_i, solution.sequence.begin() + best_i + 3);
             solution.sequence.insert(solution.sequence.begin() + best_j, reinsertSequence.begin(), reinsertSequence.end());
@@ -595,7 +594,6 @@ Solution Disturbance(Solution& solution, double** m, int dimension)
     vector<int> subseq2(copiedSeq.begin() + subseq2Index_begin, copiedSeq.begin() + subseq2Index_end);
 
     //Lengths and space calc
-    //subseq1Length = subseq1Index_end - subseq1Index_begin;
     subseq2Length = subseq2Index_end - subseq2Index_begin;
     inbetweenSubseqsLength = subseq2Index_begin - subseq1Index_end;
 
