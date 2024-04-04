@@ -190,7 +190,7 @@ bool BestImprovementSwap(Solution& solution, vector<vector<Subsequence>>& subseq
 
     //Actual swap, only happens when overall solution cost lowers
     if(bestCost < solution.cost){
-        solution.cost = bestCost;   //TODO: Test order just to be sure
+        solution.cost = bestCost;
         swap(solution.sequence[best_i], solution.sequence[best_j]);
         swap(subseqMatrix[best_i][best_i], subseqMatrix[best_j][best_j]);
 
@@ -246,7 +246,9 @@ bool BestImprovement2Opt(Solution& solution, vector<vector<Subsequence>>& subseq
     //Actual swap
     if(bestCost < solution.cost){
         reverse(solution.sequence.begin() + best_i, solution.sequence.begin() + best_j + 1);
+
         solution.cost = bestCost;
+        UpdateAllSubSeqs(solution, subseqMatrix, m);
 
     for(int i = best_i; i <= best_j; i++){
         subseqMatrix[i][i].delayCost = (i > 0);
@@ -402,7 +404,8 @@ bool BestImprovementOrOpt(Solution& solution, vector<vector<Subsequence>>& subse
             solution.sequence.erase(solution.sequence.begin() + best_i, solution.sequence.begin() + best_i + 2);
             solution.sequence.insert(solution.sequence.begin() + best_j, reinsertPortion.begin(), reinsertPortion.end());
 
-            bestCost = solution.cost;
+            //bestCost = solution.cost; //TODO: Might have to change this around, it's the sole one out
+            solution.cost = bestCost;
 
             if(best_i > best_j){
                 swap(best_i, best_j);
@@ -471,7 +474,7 @@ bool BestImprovementOrOpt(Solution& solution, vector<vector<Subsequence>>& subse
         }
 
         //Concats
-        if((bestCost < solution.cost) && (bestCost < subseqMatrix[0][dimension].accumulatedCost)){
+        if(/*(bestCost < solution.cost) && */(bestCost < subseqMatrix[0][dimension].accumulatedCost)){
             vector<int> reinsertSequence(solution.sequence.begin() + best_i, solution.sequence.begin() + best_i + 3);
             solution.sequence.erase(solution.sequence.begin() + best_i, solution.sequence.begin() + best_i + 3);
             solution.sequence.insert(solution.sequence.begin() + best_j, reinsertSequence.begin(), reinsertSequence.end());
@@ -539,13 +542,13 @@ void LocalSearch(Solution& solution, vector<vector<Subsequence>>& subseqMatrix, 
             case 1:
                 solutionImproved = BestImprovementSwap(solution, subseqMatrix, distMatrix, dimension);
                 break;
-            case 2:
+            case 2: //TODO: Also suspicious behavior: Not changing cost but returning true
                 solutionImproved = BestImprovement2Opt(solution, subseqMatrix, distMatrix, dimension);
                 break;
             case 3:
                 solutionImproved = BestImprovementOrOpt(solution, subseqMatrix, distMatrix, dimension, 1);
                 break;
-            case 4:
+            case 4: //TODO: Suspicious behavior: solution.cost and subseqMatrix[0][dimension].accumulatedCost (is higher)
                 solutionImproved = BestImprovementOrOpt(solution, subseqMatrix, distMatrix, dimension, 2);
                 break;
             case 5:
@@ -638,7 +641,7 @@ Solution IteratedLocalSearch(int maxIters, int maxIterILS, Data& data)
         while(iterILS <= maxIterILS){
             //Tries to enhance the fairly-guessed solution
             //By doing small modifications to it
-            LocalSearch(currIterSolution, subseqMatrix, data.getMatrixCost(), data.getDimension()); //TODO: Check freezing here
+            LocalSearch(currIterSolution, subseqMatrix, data.getMatrixCost(), data.getDimension());
 
             if(currIterSolution.cost < currBestSolution.cost){
                 currBestSolution.cost = currIterSolution.cost;
@@ -684,13 +687,6 @@ int main(int argc, char** argv)
     //cout << "DistanceMatrix: " << '\n';
     //data.printMatrixDist();
     cout << "Wait for it...\n";
-
-    //Defining Iters
-    //if(data.getDimension() >= 150){
-    //    maxIterILS = data.getDimension() / 2.0;
-    //}else{
-    //    maxIterILS = data.getDimension();
-    //}
 
     maxIterILS = min(100, data.getDimension());
 
