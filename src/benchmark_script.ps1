@@ -6,7 +6,7 @@ $outputFilePath = "output_benchmark.csv"
 "Instance,AvgCost,AvgTime,BuildSolution,BestImprovementSwap,OrOpt,OrOpt2,OrOpt3,2-Opt,Disturbance" | Out-File -FilePath $outputFilePath -Encoding ASCII
 
 # Iterate through each instance name
-foreach ($instanceName in $instanceNames) {
+foreach($instanceName in $instanceNames){
     # Construct the argument with instance name
     $argument = ".\instances\$instanceName.tsp"
 
@@ -20,43 +20,44 @@ foreach ($instanceName in $instanceNames) {
     $lines = $output -split "`n"
 
     # Loop through each line
-    foreach ($line in $lines) {
+    foreach($line in $lines){
+        Start-Sleep -Milliseconds 100
         # Extract the cost
-        if ($line -match 'Average s cost: ([\d.]+)') {
+        if($line -match 'Average s cost: ([\d.]+(?:[eE][+-]?\d+)?)'){
             $cost = $matches[1]
         }
 
         # Extract the average CPU execution time
-        if ($line -match 'Average CPU execution time: ([\d.]+) s') {
+        if($line -match 'Average CPU execution time: ([\d.]+) s'){
             $cpuExecutionTime = $matches[1]
         }
 
         # Extract the times for each neighborhood structure
-        if ($line -match 'BuildSolution time: ([\d.]+) s') {
+        if($line -match 'BuildSolution time: ([\d.]+) s'){
             $buildSolution = $matches[1]
         }
 
-        if ($line -match 'BestImprovementSwap time: ([\d.]+) s') {
+        if($line -match 'BestImprovementSwap time: ([\d.]+) s'){
             $bestImprovementSwap = $matches[1]
         }
 
-        if ($line -match 'OrOpt time: ([\d.]+) s') {
+        if($line -match 'OrOpt time: ([\d.]+) s'){
             $orOpt = $matches[1]
         }
 
-        if ($line -match 'OrOpt2 time: ([\d.]+) s') {
+        if($line -match 'OrOpt2 time: ([\d.]+) s'){
             $orOpt2 = $matches[1]
         }
 
-        if ($line -match 'OrOpt3 time: ([\d.]+) s') {
+        if($line -match 'OrOpt3 time: ([\d.]+) s'){
             $orOpt3 = $matches[1]
         }
 
-        if ($line -match '2-Opt time: ([\d.]+) s') {
+        if($line -match '2-Opt time: ([\d.]+) s'){
             $twoOpt = $matches[1]
         }
 
-        if ($line -match 'Disturbance time: ([\d.]+) s') {
+        if($line -match 'Disturbance time: ([\d.]+) s'){
             $disturbance = $matches[1]
         }
     }
