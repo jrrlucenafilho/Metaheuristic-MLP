@@ -121,7 +121,9 @@ Solution BuildSolution(double** distMatrix, int dimension)
 
     Solution solution;
     vector<pair<double, int>> candidatesList;
-    int lastIterSelected = 0;
+    bool firstIter = true;   //TODO: Prob'll be able to rm this, check later
+    int selected;
+    bool nodeIsItself = false;
 
     //First begin building seq (already inits at cost being zero)
     solution.sequence = {1};
@@ -133,15 +135,25 @@ Solution BuildSolution(double** distMatrix, int dimension)
 
     while(!candidatesList.empty()){
         //Changing ref point to current, recalc'ing costs regarding last inserted node (if not first iter, which begins from zero)
-        if(lastIterSelected != 0){
-            for(int i = 1; i <= (int)candidatesList.size(); i++){
-                if(i != lastIterSelected){
-                    candidatesList.at(i) = {distMatrix[lastIterSelected][i], i};
-                }else{
-                    //TODO: In case it's an INFINITY cost (distance to itself).
-                    //Should NOT insert zero to candidatesList. But continue on adding from the next one onwards. do this
+        if(!firstIter){
+            for(int i = 0; i <= (int)candidatesList.size(); i++){
+                //In case last node was itself, skip this iter (this 'i')
+                if(nodeIsItself){
+                    nodeIsItself = false;
+                    continue;
+                }
+
+                candidatesList.at(i) = {distMatrix[selected][i + 1], i + 1};
+
+                //TODO: In case it's an INFINITY cost (distance to itself).
+                //This deletion is leaving something behind, check it out
+                if((candidatesList.at(i).first == 0) && (candidatesList.at(i).second == selected)){
                     candidatesList.erase(candidatesList.begin() + i);
-                }           
+                    i--;
+                    
+                    //Signal the node is itself for next iter detection
+                    nodeIsItself = true;
+                }
             }
         }
 
@@ -150,14 +162,13 @@ Solution BuildSolution(double** distMatrix, int dimension)
 
         //Somewhat random
         double alpha = ((double)rand() + 1) / RAND_MAX;
-        int selected = rand() % ((int)ceil(alpha * candidatesList.size()));
-
-        //Saves it for next iter
-        lastIterSelected = selected;
+        selected = rand() % ((int)ceil(alpha * candidatesList.size())) + 2; //Candidates are only from 2 to dimension
 
         //Add it to initial sol seq and remove from CL
         solution.sequence.push_back(candidatesList[selected].second);
         candidatesList.erase(candidatesList.begin() + selected);
+
+        firstIter = false;
     }
 
     solution.sequence.push_back(1);
@@ -692,6 +703,7 @@ int main(int argc, char** argv)
 
     data.read();
     data.reformatMatrix();
+    data.printMatrixDist();
     size_t n = data.getDimension();
 
     cout << "Dimension: " << n << '\n';
