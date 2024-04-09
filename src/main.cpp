@@ -125,6 +125,8 @@ Solution BuildSolution(double** distMatrix, int dimension)
     int selected;
     bool nodeIsItself = false;
 
+    solution.sequence.reserve(dimension + 1);
+
     //First begin building seq (already inits at cost being zero)
     solution.sequence = {1};
 
@@ -137,16 +139,14 @@ Solution BuildSolution(double** distMatrix, int dimension)
         //Changing ref point to current, recalc'ing costs regarding last inserted node (if not first iter, which begins from zero)
         if(!firstIter){
             for(int i = 0; i <= (int)candidatesList.size(); i++){
-                //In case last node was itself, skip this iter (this 'i')
+                //In case last node was itself, skip this iter (this 'i') and add the next one to CL
                 if(nodeIsItself){
                     nodeIsItself = false;
-                    continue;
+                    i++;
                 }
 
                 candidatesList.at(i) = {distMatrix[selected][i + 1], i + 1};
 
-                //TODO: In case it's an INFINITY cost (distance to itself).
-                //This deletion is leaving something behind, check it out
                 if((candidatesList.at(i).first == 0) && (candidatesList.at(i).second == selected)){
                     candidatesList.erase(candidatesList.begin() + i);
                     i--;
@@ -162,7 +162,7 @@ Solution BuildSolution(double** distMatrix, int dimension)
 
         //Somewhat random
         double alpha = ((double)rand() + 1) / RAND_MAX;
-        selected = rand() % ((int)ceil(alpha * candidatesList.size())) + 2; //Candidates are only from 2 to dimension
+        selected = rand() % ((int)ceil(alpha * candidatesList.size())) + 2; //Candidates are only from 2 up to dimension
 
         //Add it to initial sol seq and remove from CL
         solution.sequence.push_back(candidatesList[selected].second);
