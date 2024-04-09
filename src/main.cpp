@@ -121,22 +121,39 @@ Solution BuildSolution(double** distMatrix, int dimension)
 
     Solution solution;
     vector<pair<double, int>> candidatesList;
+    int lastIterSelected = 0;
 
     //First begin building seq (already inits at cost being zero)
     solution.sequence = {1};
 
     //Populating CL
     for(int i = 2; i <= dimension; i++){
-        candidatesList.push_back({distMatrix[0][i], i});
+        candidatesList.push_back({distMatrix[1][i], i});
     }
 
     while(!candidatesList.empty()){
+        //Changing ref point to current, recalc'ing costs regarding last inserted node (if not first iter, which begins from zero)
+        if(lastIterSelected != 0){
+            for(int i = 1; i <= (int)candidatesList.size(); i++){
+                if(i != lastIterSelected){
+                    candidatesList.at(i) = {distMatrix[lastIterSelected][i], i};
+                }else{
+                    //TODO: In case it's an INFINITY cost (distance to itself).
+                    //Should NOT insert zero to candidatesList. But continue on adding from the next one onwards. do this
+                    candidatesList.erase(candidatesList.begin() + i);
+                }           
+            }
+        }
+
         //Sorts the list of candidates by cost
         sort(candidatesList.begin(), candidatesList.end());
 
         //Somewhat random
         double alpha = ((double)rand() + 1) / RAND_MAX;
         int selected = rand() % ((int)ceil(alpha * candidatesList.size()));
+
+        //Saves it for next iter
+        lastIterSelected = selected;
 
         //Add it to initial sol seq and remove from CL
         solution.sequence.push_back(candidatesList[selected].second);
