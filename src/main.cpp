@@ -111,6 +111,23 @@ double CalculateSequenceCost(vector<int>& sequence, double** m, int dimension)
     return branchTotalCost;
 }
 
+void RecalculateCL(vector<pair<double, int>>& candidatesList, double** m, int dimension, int selected)
+{
+    for(int i = 1; i <= dimension; i++){
+        //First checks if the node is in the list
+        auto iter = find_if(candidatesList.begin(), candidatesList.end(), [i](const pair<double, int>& element)
+                          { return element.second == i; });
+
+        //Skips if node is itself or if it isn't in CL
+        if((i == selected) || iter == candidatesList.end()){
+            continue;
+        }
+
+        //If it is in CL, gets the cost from the matrix, in ref to current selected node
+        iter->first = m[i][selected];
+    }
+}
+
 /**
  * @brief Builds a fair solution (though still far from optimized) Using Greedy Randomized Adaptive Search (Insertion-by-cheapest)
  * @return Solution
@@ -120,10 +137,8 @@ Solution BuildSolution(double** distMatrix, int dimension)
     buildSol_time_ptr->beginTime = std::clock();
 
     Solution solution;
-    vector<pair<double, int>> candidatesList;
-    bool firstIter = true;   //TODO: Prob'll be able to rm this, check later
-    int selected;
-    bool nodeIsItself = false;
+    vector<pair<double, int>> candidatesList;   //pair <cost, node>
+    int selected = -1;  //Just so it doesn't recalc first iter (doesn't need to)
 
     solution.sequence.reserve(dimension + 1);
 
@@ -136,25 +151,9 @@ Solution BuildSolution(double** distMatrix, int dimension)
     }
 
     while(!candidatesList.empty()){
-        //Changing ref point to current, recalc'ing costs regarding last inserted node (if not first iter, which begins from zero)
-        if(!firstIter){
-            for(int i = 0; i <= (int)candidatesList.size(); i++){
-                //In case last node was itself, skip this iter (this 'i') and add the next one to CL
-                if(nodeIsItself){
-                    nodeIsItself = false;
-                    i++;
-                }
-
-                candidatesList.at(i) = {distMatrix[selected][i + 1], i + 1};
-
-                if((candidatesList.at(i).first == 0) && (candidatesList.at(i).second == selected)){
-                    candidatesList.erase(candidatesList.begin() + i);
-                    i--;
-                    
-                    //Signal the node is itself for next iter detection
-                    nodeIsItself = true;
-                }
-            }
+        //Changing ref point to current, recalc'ing costs regarding last inserted node (if not first iter, which begins first node (row 1))
+        if(selected != -1){
+            RecalculateCL(candidatesList, distMatrix, dimension, selected);
         }
 
         //Sorts the list of candidates by cost
@@ -167,8 +166,6 @@ Solution BuildSolution(double** distMatrix, int dimension)
         //Add it to initial sol seq and remove from CL
         solution.sequence.push_back(candidatesList[selected].second);
         candidatesList.erase(candidatesList.begin() + selected);
-
-        firstIter = false;
     }
 
     solution.sequence.push_back(1);
