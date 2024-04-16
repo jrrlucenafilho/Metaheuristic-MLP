@@ -21,7 +21,7 @@ foreach($instanceName in $instanceNames){
 
     # Loop through each line
     foreach($line in $lines){
-        Start-Sleep -Milliseconds 100
+        Start-Sleep -Milliseconds 1000
         # Extract the cost
         if($line -match 'Average s cost: ([\d.]+(?:[eE][+-]?\d+)?)'){
             $cost = $matches[1]
