@@ -700,7 +700,7 @@ int main(int argc, char** argv)
 
     data.read();
     data.reformatMatrix();
-    data.printMatrixDist();
+    //data.printMatrixDist();
     size_t n = data.getDimension();
 
     cout << "Dimension: " << n << '\n';
