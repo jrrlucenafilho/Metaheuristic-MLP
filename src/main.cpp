@@ -145,13 +145,13 @@ Solution BuildSolution(double** distMatrix, int dimension)
     //First begin building seq (already inits at cost being zero)
     solution.sequence = {1};
 
-    //Populating CL
+    //Populating CL, calc'ing in ref to first node's distance to each
     for(int i = 2; i <= dimension; i++){
         candidatesList.push_back({distMatrix[1][i], i});
     }
 
     while(!candidatesList.empty()){
-        //Changing ref point to current, recalc'ing costs regarding last inserted node (if not first iter, which begins first node (row 1))
+        //Changing ref point to current, recalc'ing costs regarding last inserted node (if not first iter, which begins on first node (row 1))
         if(selected != -1){
             RecalculateCL(candidatesList, distMatrix, dimension, candidatesList[selected].second);
         }
@@ -161,7 +161,7 @@ Solution BuildSolution(double** distMatrix, int dimension)
 
         //Somewhat random
         double alpha = ((double)rand() + 1) / RAND_MAX;
-        selected = rand() % ((int)ceil(alpha * candidatesList.size())); //Candidates are only from 2 up to dimension
+        selected = rand() % ((int)ceil(alpha * candidatesList.size()));
 
         //Add it to initial sol seq and remove from CL
         solution.sequence.push_back(candidatesList[selected].second);
