@@ -111,7 +111,7 @@ double CalculateSequenceCost(vector<int>& sequence, double** m, int dimension)
     return branchTotalCost;
 }
 
-void RecalculateCL(vector<pair<double, int>>& candidatesList, double** m, int dimension, int selected)
+void RecalculateCL(vector<pair<double, int>>& candidatesList, double** m, int dimension, int selectedNode)
 {
     for(int i = 1; i <= dimension; i++){
         //First checks if the node is in the list
@@ -119,12 +119,12 @@ void RecalculateCL(vector<pair<double, int>>& candidatesList, double** m, int di
                           { return element.second == i; });
 
         //Skips if node is itself or if it isn't in CL
-        if((i == selected) || iter == candidatesList.end()){
+        if((i == selectedNode) || iter == candidatesList.end()){
             continue;
         }
 
-        //If it is in CL, gets the cost from the matrix, in ref to current selected node
-        iter->first = m[i][selected];
+        //If it is in CL, gets the cost from the matrix, in ref to current selectedNode node
+        iter->first = m[i][selectedNode];
     }
 }
 
@@ -153,7 +153,7 @@ Solution BuildSolution(double** distMatrix, int dimension)
     while(!candidatesList.empty()){
         //Changing ref point to current, recalc'ing costs regarding last inserted node (if not first iter, which begins first node (row 1))
         if(selected != -1){
-            RecalculateCL(candidatesList, distMatrix, dimension, selected);
+            RecalculateCL(candidatesList, distMatrix, dimension, candidatesList[selected].second);
         }
 
         //Sorts the list of candidates by cost
@@ -161,7 +161,7 @@ Solution BuildSolution(double** distMatrix, int dimension)
 
         //Somewhat random
         double alpha = ((double)rand() + 1) / RAND_MAX;
-        selected = rand() % ((int)ceil(alpha * candidatesList.size())) + 2; //Candidates are only from 2 up to dimension
+        selected = rand() % ((int)ceil(alpha * candidatesList.size())); //Candidates are only from 2 up to dimension
 
         //Add it to initial sol seq and remove from CL
         solution.sequence.push_back(candidatesList[selected].second);
